@@ -1,0 +1,19 @@
+node_modules/
+dist/
+build/
+coverage/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.local

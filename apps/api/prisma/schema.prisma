@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  authHash  String
+  kdfSalt   String
+  kdfParams Json
+  createdAt DateTime    @default(now())
+  items     VaultItem[]
+}
+
+model VaultItem {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ciphertext String
+  iv         String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
