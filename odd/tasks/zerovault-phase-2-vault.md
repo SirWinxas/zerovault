@@ -36,8 +36,12 @@ CRUD for the user's encrypted vault items over the API. The server stores only
   repo + shared-types DTOs (Create/Update/Response) + Vitest suite incl. cross-user
   isolation. Ownership enforced via `owned(id,userId)`; adapter returns copies (no
   external mutation of stored state). 56 api tests / 5 shared-types. DONE.
-- [ ] **V2** `PrismaVaultRepository` (userId-scoped queries; update/delete return
-  not-found when the row isn't owned) + fake-Prisma unit tests.
+- [x] **V2** `PrismaVaultRepository` — every query scoped by `userId` (ownership):
+  create; findMany(where userId, orderBy createdAt desc); findFirst(where {id,userId});
+  update via updateMany(where {id,userId}) → count 0 → null, else re-read; delete via
+  deleteMany(where {id,userId}) → count>0. DI'd `PrismaVaultClient`, unit-tested with a
+  fake that asserts `userId` in every where. No schema change (VaultItem already existed).
+  65 api tests. DONE.
 - [ ] **V3** JWT auth middleware (verify token → `req.userId`, 401 on missing/invalid) +
   vault HTTP routes (`POST/GET/PUT/DELETE /vault`) + Zod validation + composition +
   error mapping (404 for not-found/not-owned). Wire into index.ts.
@@ -69,8 +73,16 @@ Strict TDD: tests first → RED → GREEN → REFACTOR. Evidence captured.
   root tests api 56 / web 1 / crypto 15 / shared-types 5, typecheck clean. Committed with
   ODD doc in one unit.
 
+- 2026-10-04: V2 built by writer (TDD). Parent read the adapter: every query scoped by
+  userId (create/findMany/findFirst/updateMany/deleteMany); update re-reads via
+  findByIdForUser; ownership asserted in tests. Re-ran: api 65 / web 1 / crypto 15 /
+  shared-types 5, typecheck clean. Committed with ODD doc in one unit.
+
 ## Next step
 
-V2 — `PrismaVaultRepository` (userId-scoped queries; update/delete must return not-found
-when the row isn't owned — use `updateMany`/`deleteMany` with `{ id, userId }` and check
-the affected count) + fake-Prisma unit tests. Then V3 (JWT middleware + routes).
+V3 — JWT auth middleware (verify token via JwtTokenService → `req.userId`; 401 on
+missing/invalid/expired) + vault HTTP routes (`POST /vault`, `GET /vault`, `PUT /vault/:id`,
+`DELETE /vault/:id`) with Zod validation + composition (PrismaVaultRepository) + error
+mapping (404 for VaultItemNotFoundError) + mount in index.ts. Then Phase 2 is complete.
+Minor V1 follow-ups (dedupe Create/Update schema; VaultItemDTO vs VaultItemResponse) can
+ride along in V3 or later.
