@@ -2,7 +2,7 @@ import type { NewVaultItem, VaultItem, VaultItemUpdate } from "../domain/vault-i
 
 export interface VaultRepository {
   create(item: NewVaultItem): Promise<VaultItem>;
-  listByUser(userId: string): Promise<VaultItem[]>;
+  listByUser(userId: string, page: { limit: number; offset: number }): Promise<VaultItem[]>;
   findByIdForUser(id: string, userId: string): Promise<VaultItem | null>;
   /** Returns null if the item is missing or not owned by `userId`. */
   update(id: string, userId: string, patch: VaultItemUpdate): Promise<VaultItem | null>;

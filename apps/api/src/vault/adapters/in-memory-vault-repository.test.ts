@@ -13,8 +13,23 @@ describe("InMemoryVaultRepository", () => {
     const vault = new InMemoryVaultRepository();
     await vault.create({ userId: "A", ciphertext: "a1", iv: "i" });
     await vault.create({ userId: "B", ciphertext: "b1", iv: "i" });
-    const list = await vault.listByUser("A");
+    const list = await vault.listByUser("A", { limit: 50, offset: 0 });
     expect(list.map((i) => i.ciphertext)).toEqual(["a1"]);
+  });
+
+  it("listByUser pages in createdAt DESC order", async () => {
+    const vault = new InMemoryVaultRepository();
+    for (const c of ["c1", "c2", "c3", "c4"]) {
+      await vault.create({ userId: "A", ciphertext: c, iv: "i" });
+      await new Promise((r) => setTimeout(r, 3));
+    }
+    await vault.create({ userId: "B", ciphertext: "b1", iv: "i" });
+    const names = async (limit: number, offset: number) =>
+      (await vault.listByUser("A", { limit, offset })).map((i) => i.ciphertext);
+    expect(await names(2, 0)).toEqual(["c4", "c3"]);
+    expect(await names(2, 1)).toEqual(["c3", "c2"]);
+    expect(await names(2, 3)).toEqual(["c1"]);
+    expect(await names(2, 10)).toEqual([]);
   });
 
   it("update returns null for missing or foreign items and leaves them unchanged", async () => {
@@ -42,6 +57,6 @@ describe("InMemoryVaultRepository", () => {
     expect(await vault.delete("missing", "A")).toBe(false);
     expect(await vault.findByIdForUser(item.id, "A")).not.toBeNull();
     expect(await vault.delete(item.id, "A")).toBe(true);
-    expect(await vault.listByUser("A")).toEqual([]);
+    expect(await vault.listByUser("A", { limit: 50, offset: 0 })).toEqual([]);
   });
 });

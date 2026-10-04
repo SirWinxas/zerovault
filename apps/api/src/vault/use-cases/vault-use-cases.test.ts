@@ -22,7 +22,7 @@ describe("vault use cases", () => {
     const { create, vault } = setup();
     const res = await create("A", { ciphertext: "c", iv: "i" });
     expect(res).toEqual({ id: expect.any(String), ciphertext: "c", iv: "i" });
-    const stored = await vault.listByUser("A");
+    const stored = await vault.listByUser("A", { limit: 50, offset: 0 });
     expect(stored).toHaveLength(1);
     expect(stored[0]).toMatchObject({ id: res.id, userId: "A" });
   });
@@ -32,6 +32,27 @@ describe("vault use cases", () => {
     const a = await create("A", { ciphertext: "a", iv: "i" });
     await create("B", { ciphertext: "b", iv: "i" });
     expect(await list("A")).toEqual([a]);
+  });
+
+  it("list clamps pagination before it reaches the repository", async () => {
+    const calls: Array<{ limit: number; offset: number }> = [];
+    const vault = {
+      listByUser: async (_u: string, page: { limit: number; offset: number }) => {
+        calls.push(page);
+        return [];
+      },
+    } as unknown as InMemoryVaultRepository;
+    const list = makeListVaultItems({ vault });
+    await list("A");
+    await list("A", { limit: 1000, offset: 5 });
+    await list("A", { limit: 0, offset: -3 });
+    await list("A", { limit: 7, offset: 2 });
+    expect(calls).toEqual([
+      { limit: 50, offset: 0 },
+      { limit: 100, offset: 5 },
+      { limit: 1, offset: 0 },
+      { limit: 7, offset: 2 },
+    ]);
   });
 
   it("update changes the owner's item and advances updatedAt", async () => {

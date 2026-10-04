@@ -13,8 +13,17 @@ export class InMemoryVaultRepository implements VaultRepository {
     return { ...stored };
   }
 
-  async listByUser(userId: string): Promise<VaultItem[]> {
-    return [...this.items.values()].filter((i) => i.userId === userId).map((i) => ({ ...i }));
+  async listByUser(
+    userId: string,
+    { limit, offset }: { limit: number; offset: number },
+  ): Promise<VaultItem[]> {
+    // Reverse first so that, on equal timestamps, the later insertion sorts first (stable sort).
+    return [...this.items.values()]
+      .filter((i) => i.userId === userId)
+      .reverse()
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(offset, offset + limit)
+      .map((i) => ({ ...i }));
   }
 
   async findByIdForUser(id: string, userId: string): Promise<VaultItem | null> {

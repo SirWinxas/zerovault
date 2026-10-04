@@ -89,9 +89,15 @@ describe("PrismaVaultRepository", () => {
     const { client, calls } = createFake({
       list: [record({ id: "a" }), record({ id: "b" })],
     });
-    const items = await new PrismaVaultRepository(client).listByUser("user-1");
+    const items = await new PrismaVaultRepository(client).listByUser("user-1", {
+      limit: 50,
+      offset: 0,
+    });
     expect(calls.findMany).toHaveLength(1);
     expect(calls.findMany[0]?.where).toEqual({ userId: "user-1" });
+    expect(calls.findMany[0]?.orderBy).toEqual({ createdAt: "desc" });
+    expect(calls.findMany[0]?.take).toBe(50);
+    expect(calls.findMany[0]?.skip).toBe(0);
     expect(items.map((i) => i.id)).toEqual(["a", "b"]);
   });
 

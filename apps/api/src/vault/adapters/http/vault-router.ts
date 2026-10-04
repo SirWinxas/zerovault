@@ -1,12 +1,17 @@
 import { Router } from "express";
 import type { NextFunction, Request, Response } from "express";
 import { CreateVaultItemRequestSchema, UpdateVaultItemRequestSchema } from "@zerovault/shared-types";
-import { ZodError } from "zod";
+import { ZodError, z } from "zod";
 import { VaultItemNotFoundError } from "../../domain/errors.js";
 import type { makeCreateVaultItem } from "../../use-cases/create-vault-item.js";
 import type { makeDeleteVaultItem } from "../../use-cases/delete-vault-item.js";
 import type { makeListVaultItems } from "../../use-cases/list-vault-items.js";
 import type { makeUpdateVaultItem } from "../../use-cases/update-vault-item.js";
+
+const ListQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).optional(),
+  offset: z.coerce.number().int().nonnegative().optional(),
+});
 
 export interface VaultRouterDeps {
   createVaultItem: ReturnType<typeof makeCreateVaultItem>;
@@ -34,7 +39,8 @@ export function createVaultRouter({
   router.get("/", async (req, res) => {
     const userId = req.userId;
     if (!userId) return void unauthorized(res);
-    res.status(200).json(await listVaultItems(userId));
+    const { limit, offset } = ListQuerySchema.parse(req.query);
+    res.status(200).json(await listVaultItems(userId, { limit, offset }));
   });
 
   router.put("/:id", async (req, res) => {

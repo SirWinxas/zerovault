@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import type { Router } from "express";
+import { Router } from "express";
+import { createAuthRateLimiter } from "./adapters/http/rate-limit.js";
 import { createAuthRouter } from "./adapters/http/auth-router.js";
 import { createDecoy } from "./adapters/decoy.js";
 import { JwtTokenService } from "./adapters/jwt-token-service.js";
@@ -28,9 +29,15 @@ export function buildAuthRouter(): Router {
   const hasher = new ScryptHasher();
   const tokens = new JwtTokenService({ secret });
 
-  return createAuthRouter({
-    registerUser: makeRegisterUser({ users, hasher }),
-    loginUser: makeLoginUser({ users, hasher, tokens, decoyHash: decoy.hash }),
-    getAuthParams: makeGetAuthParams({ users, decoy }),
-  });
+  // The limiter runs before every auth route (in-memory store: per-instance, fine for the MVP).
+  const router = Router();
+  router.use(createAuthRateLimiter());
+  router.use(
+    createAuthRouter({
+      registerUser: makeRegisterUser({ users, hasher }),
+      loginUser: makeLoginUser({ users, hasher, tokens, decoyHash: decoy.hash }),
+      getAuthParams: makeGetAuthParams({ users, decoy }),
+    }),
+  );
+  return router;
 }

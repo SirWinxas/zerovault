@@ -52,8 +52,29 @@ describe("vault router", () => {
     const res = await request(app).get("/vault");
     expect(res.status).toBe(200);
     expect(res.body).toEqual([item]);
-    expect(deps.listVaultItems).toHaveBeenCalledWith("u1");
+    expect(deps.listVaultItems).toHaveBeenCalledWith("u1", {
+      limit: undefined,
+      offset: undefined,
+    });
   });
+
+  it("GET / forwards limit and offset", async () => {
+    const { app, deps } = setup();
+    const res = await request(app).get("/vault?limit=5&offset=10");
+    expect(res.status).toBe(200);
+    expect(deps.listVaultItems).toHaveBeenCalledWith("u1", { limit: 5, offset: 10 });
+  });
+
+  it.each(["limit=abc", "limit=-1", "limit=101", "offset=-1"])(
+    "GET / returns 400 for invalid query %s",
+    async (q) => {
+      const { app, deps } = setup();
+      const res = await request(app).get(`/vault?${q}`);
+      expect(res.status).toBe(400);
+      expect(deps.listVaultItems).not.toHaveBeenCalled();
+    },
+  );
+
 
   it("PUT /:id updates an item", async () => {
     const { app, deps } = setup();

@@ -18,6 +18,8 @@ export interface PrismaVaultClient {
     findMany(args: {
       where: { userId: string };
       orderBy?: { createdAt: "asc" | "desc" };
+      take?: number;
+      skip?: number;
     }): Promise<PrismaVaultRecord[]>;
     findFirst(args: { where: { id: string; userId: string } }): Promise<PrismaVaultRecord | null>;
     updateMany(args: {
@@ -50,10 +52,15 @@ export class PrismaVaultRepository implements VaultRepository {
     return toVaultItem(record);
   }
 
-  async listByUser(userId: string): Promise<VaultItem[]> {
+  async listByUser(
+    userId: string,
+    { limit, offset }: { limit: number; offset: number },
+  ): Promise<VaultItem[]> {
     const records = await this.prisma.vaultItem.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
     });
     return records.map(toVaultItem);
   }
