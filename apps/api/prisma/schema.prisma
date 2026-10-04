@@ -10,6 +10,7 @@ datasource db {
 model User {
   id           String      @id @default(cuid())
   email        String      @unique
+  /// Server-side hash of the client-derived authHash; never the raw authHash value.
   authHashHash String
   authSalt     String
   encSalt      String

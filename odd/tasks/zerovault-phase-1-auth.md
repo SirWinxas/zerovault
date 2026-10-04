@@ -58,19 +58,23 @@ Strict TDD: tests first → RED → minimal GREEN → REFACTOR. RED/GREEN eviden
   Atomic create: catches Prisma `P2002` → `EmailAlreadyRegisteredError` (review R4 fixed).
   DI'd `PrismaUserClient` so it is unit-tested with a fake (no live DB). 5 new tests.
   Type-only shared-types import (dist debt still deferred to A3). DONE.
-- [ ] **A3** Express routes (`POST /auth/register`, `GET /auth/params`,
-  `POST /auth/login`) with Zod validation + composition root wiring real adapters +
-  `JWT_SECRET` in `.env.example`.
-  SHOULD (review R1 + R3-timing): enumeration hardening — uniform responses/errors and
-  equalized timing (dummy verify on unknown email) so `getAuthParams`/login don't reveal
-  which emails exist.
+- [x] **A3a** Express routes (`POST /auth/register`, `GET /auth/params`,
+  `POST /auth/login`) with Zod validation + router error-mapping (400/401/409/500) +
+  composition root (`buildAuthRouter`, real adapters, `JWT_SECRET` required) + mount in
+  index.ts guarded by `isMain` (tests stay DB-free) + shared-types runtime resolution via
+  `tsx` (`start` script added) + FU-A-3 doc-comment. 11 supertest route tests (35 total).
+  DONE. (getAuthParams still 401s on unknown email — enumeration, hardened in A3b.)
+- [ ] **A3b** Enumeration hardening (FU-A-2): `getAuthParams` returns a deterministic
+  decoy salt (HMAC(pepper, email)) + default params for unknown emails instead of 401;
+  `loginUser` runs a dummy verify on unknown email to equalize timing. Needs an
+  `AUTH_PEPPER`/decoy-hash dependency injected into the use cases.
 
 ### Review follow-ups (from A1 4-lens review, lineage review-5e5f34dc5defad43, APPROVED)
 
 - [x] **FU-A-1** (R4, resilience WARNING) → DONE in A2 (atomic create, P2002 → EmailAlreadyRegisteredError, tested).
 - [ ] **FU-A-2** (R1 risk + R3 reliability, enumeration) → folded into A3 (hardening).
-- [ ] **FU-A-3** (R2 readability SUGGESTION) doc-comment `StoredUser.authHashHash` /
-  `NewUser.authHashHash` = "server-side hash of the client authHash; never the raw value".
+- [x] **FU-A-3** (R2 readability SUGGESTION) DONE in A3a: doc-comment on
+  `StoredUser.authHashHash` / `NewUser.authHashHash` and the Prisma schema field.
 - [ ] **FU-A-4** (R3 reliability SUGGESTION) add tests for the two untested defensive
   branches: JWT valid-signature-but-missing/non-string-`sub`; scrypt odd-hex-length guard.
 
@@ -125,9 +129,15 @@ Strict TDD: tests first → RED → minimal GREEN → REFACTOR. RED/GREEN eviden
   for DB-less testing). Re-ran: prisma generate OK, root tests api 24 / web 1 / crypto 15 /
   shared-types 3, typecheck clean. Committed with the ODD doc in one work unit.
 
+- 2026-10-04: A3a built by writer (TDD). Parent review of auth-router.ts + composition.ts:
+  correct (Zod validation, HTTP error mapping, 500 leaks no internals, JWT_SECRET required,
+  Prisma lazy, composition only under isMain so tests stay DB-free). Re-ran: root tests
+  api 35 / web 1 / crypto 15 / shared-types 3, typecheck clean, prisma generate OK.
+  shared-types runtime resolution solved via tsx `start`. Committed with ODD doc in one unit.
+
 ## Next step
 
-A3 — Express routes (`POST /auth/register`, `GET /auth/params`, `POST /auth/login`) with
-Zod validation + composition root (wire real adapters, `JWT_SECRET`) + FIX shared-types
-dist resolution (first runtime Zod import) + enumeration hardening (FU-A-2). Needs a live
-DB (Neon) only for end-to-end run, not for route unit tests. Deferred deploy block pending.
+A3b — enumeration hardening (FU-A-2). Then Phase 1 (crypto + auth) is functionally complete
+pending live DB. Remaining big items: VaultItem CRUD (Phase 2), web client (register/login
++ vault, wiring @zerovault/crypto), and the deferred deploy block (GitHub/Vercel/Railway/Neon)
++ end-to-end run against Neon. Optional: FU-A-4 (test 2 defensive branches).
