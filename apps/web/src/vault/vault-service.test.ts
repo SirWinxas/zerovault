@@ -101,6 +101,37 @@ describe("vault-service", () => {
     expect(calls).toEqual([{ method: "DELETE", path: "/vault/5" }]);
   });
 
+  it("list flags an undecryptable item instead of rejecting", async () => {
+    const post = fakeApi({ post: { id: "1", ciphertext: "c", iv: "i" } });
+    await createVaultService(post.api, () => key).create(entry);
+    const good = post.calls[0].body as { ciphertext: string; iv: string };
+
+    const stored: VaultItemResponse[] = [
+      { id: "1", ...good },
+      { id: "2", ciphertext: "AAAA", iv: "AAAA" },
+      { id: "3", ...good },
+    ];
+    const items = await createVaultService(fakeApi({ get: stored }).api, () => key).list();
+
+    expect(items).toEqual([
+      { id: "1", ...entry },
+      { id: "2", site: "", username: "", password: "", decryptError: true },
+      { id: "3", ...entry },
+    ]);
+  });
+
+  it("list flags a record that decrypts to non-JSON", async () => {
+    const { encrypt } = await import("@zerovault/crypto");
+    const bad = await encrypt(key, "not json");
+    const items = await createVaultService(
+      fakeApi({ get: [{ id: "9", ...bad }] }).api,
+      () => key,
+    ).list();
+    expect(items).toEqual([
+      { id: "9", site: "", username: "", password: "", decryptError: true },
+    ]);
+  });
+
   it("throws a clear error when the vault is locked", async () => {
     const { api, calls } = fakeApi({ get: [] });
     const svc = createVaultService(api, () => null);

@@ -49,8 +49,13 @@ never leave the browser and live only in memory (never localStorage/sessionStora
   6 new tests incl. a "no plaintext in payload" assertion + create→list round-trip (node
   env). 123 tests total. DONE. (Deviations: delete has no confirm; reload-after-write
   instead of optimistic — both fine for MVP.)
-- [ ] **W3** Extras: password generator, copy-to-clipboard with auto-clear, auto-lock on
-  inactivity (wipe key), responsive polish.
+- [x] **W3** Extras. DONE: `password-generator` (CSPRNG rejection-sampling, no modulo bias,
+  guarantees ≥1 per enabled set + Fisher-Yates, validates sets/length); `lib/clipboard`
+  `copyWithAutoClear` (overwrite after ~20s); `use-auto-lock` hook (inactivity → lock → /login,
+  wired via an `AutoLock` component inside `RequireSession` so it only runs authenticated);
+  FU-W-4 resilient `list()` (per-item try/catch → `decryptError` flag, bad item no longer
+  fails the whole vault; card shows "⚠ Unable to decrypt"). Generator + copy buttons wired into
+  the form/card; responsive `flex-wrap`. 46 web tests (147 total). DONE.
 
 ## Testing notes
 
@@ -86,10 +91,18 @@ never leave the browser and live only in memory (never localStorage/sessionStora
 
 ## Status: the app is usable end-to-end (login + encrypted vault CRUD) pending a live DB.
 
+- 2026-10-04: W3 built by writer (TDD). Parent reviewed generator (secure CSPRNG, rejection
+  sampling, guarantees per-set + shuffle), clipboard auto-clear, auto-lock hook (cleanup +
+  onLockRef), resilient list(). Re-ran: web build OK, root api 81 / web 46 / crypto 15 /
+  shared-types 5, typecheck clean. Committed with ODD doc in one unit.
+
+## Status: WEB CLIENT COMPLETE. Full app (backend + web) done, pending deploy + a live DB.
+
 ## Next step
 
-W3 — password generator + copy-to-clipboard with auto-clear + auto-lock on inactivity (wipe
-key) + responsive polish. Also fold in W1 follow-ups: FU-W-1 (api-client timeout/AbortController),
-FU-W-2 (register two-phase 409 UX), FU-W-3 (test use-auth-submit). Then: deploy block (needs
-accounts) + hardening backlog (rate-limiting, pagination) + TFM deliverables (slides, video,
-README, demo account). Deadline 2026-10-26.
+Remaining for the TFM (deadline 2026-10-26):
+1. Deploy block — GitHub public repo + Vercel (web) + Railway (api) + Neon (DB) + prisma migrate
+   + CORS on the api + demo account seed + e2e smoke + README URLs. NEEDS user accounts.
+2. Hardening backlog — FU-A-7 rate-limiting, FU-V-1 pagination; smaller: FU-W-1 (client timeout),
+   FU-W-2 (register 409 UX), FU-W-3/5 (tests), FU-A-4/6, FU-V-2/3, crypto-alias cleanup.
+3. TFM deliverables — README, ~8 slides, ~5min video, test account in README + submission form.

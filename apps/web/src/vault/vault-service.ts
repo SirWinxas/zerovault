@@ -41,11 +41,22 @@ export function createVaultService(
       const key = requireKey();
       const items = await api.get<VaultItemResponse[]>("/vault");
       return Promise.all(
-        items.map(async ({ id, ciphertext, iv }) => {
-          const entry = JSON.parse(
-            await decrypt(key, { ciphertext, iv }),
-          ) as VaultEntry;
-          return { id, ...entry };
+        items.map(async ({ id, ciphertext, iv }): Promise<DecryptedVaultItem> => {
+          // One corrupt record must not fail the whole vault load.
+          try {
+            const entry = JSON.parse(
+              await decrypt(key, { ciphertext, iv }),
+            ) as VaultEntry;
+            return { id, ...entry };
+          } catch {
+            return {
+              id,
+              site: "",
+              username: "",
+              password: "",
+              decryptError: true,
+            };
+          }
         }),
       );
     },

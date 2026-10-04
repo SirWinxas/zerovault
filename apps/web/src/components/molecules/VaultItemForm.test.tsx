@@ -20,3 +20,15 @@ describe("VaultItemForm", () => {
     });
   });
 });
+
+describe("VaultItemForm password generator", () => {
+  it("fills the password field using the chosen length", async () => {
+    render(<VaultItemForm onSubmit={() => {}} onCancel={() => {}} />);
+    const length = screen.getByLabelText(/^length$/i);
+    await userEvent.clear(length);
+    await userEvent.type(length, "24");
+    await userEvent.click(screen.getByRole("button", { name: /generate/i }));
+    const pw = (screen.getByLabelText(/^password$/i) as HTMLInputElement).value;
+    expect(pw).toHaveLength(24);
+  });
+});

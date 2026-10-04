@@ -3,11 +3,25 @@ import type { ReactNode } from "react";
 import { SessionProvider, useSession } from "./session/SessionContext";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import { useAutoLock } from "./session/use-auto-lock";
 import VaultPage from "./pages/VaultPage";
+
+/** Mounted only while a session exists, so the timer never runs logged out. */
+function AutoLock() {
+  const { lock } = useSession();
+  useAutoLock(lock);
+  return null;
+}
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session } = useSession();
-  return session ? children : <Navigate to="/login" replace />;
+  if (!session) return <Navigate to="/login" replace />;
+  return (
+    <>
+      <AutoLock />
+      {children}
+    </>
+  );
 }
 
 export default function App() {
