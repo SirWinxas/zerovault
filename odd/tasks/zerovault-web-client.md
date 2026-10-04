@@ -42,8 +42,13 @@ never leave the browser and live only in memory (never localStorage/sessionStora
   - DEVIATION/FU-W-crypto-alias: `@zerovault/crypto` `main` points to unbuilt `dist`, so web
     aliases it to `packages/crypto/src` in vite.config + tsconfig paths. Works; follow-up =
     align crypto `exports`→src (like shared-types) and drop the alias.
-- [ ] **W2** Vault UI: vault API client, encrypt-before-send / decrypt-on-read, list/create/
-  edit/delete components (atomic design).
+- [x] **W2** Vault UI. DONE: `vault/vault-service` (encrypt entry JSON before POST/PUT,
+  decrypt on list; API only sees {ciphertext,iv}; `requireKey` throws when locked) +
+  `VaultItemForm`/`VaultItemCard` (show/hide password) + `VaultList` + `VaultPage` (loads
+  list, create/edit/delete reload after, Lock button). Key from in-memory session only.
+  6 new tests incl. a "no plaintext in payload" assertion + create→list round-trip (node
+  env). 123 tests total. DONE. (Deviations: delete has no confirm; reload-after-write
+  instead of optimistic — both fine for MVP.)
 - [ ] **W3** Extras: password generator, copy-to-clipboard with auto-clear, auto-lock on
   inactivity (wipe key), responsive polish.
 
@@ -74,8 +79,17 @@ never leave the browser and live only in memory (never localStorage/sessionStora
   web build OK, root tests api 81 / web 16 / crypto 15 / shared-types 5, typecheck clean.
   Committed with ODD doc in one unit. Crypto-alias deviation logged above.
 
+- 2026-10-04: W2 built by writer (TDD). Parent reviewed vault-service: plaintext encrypted
+  before any POST/PUT (API only sees {ciphertext,iv}), decrypt on read, key from memory,
+  requireKey gates locked. Re-ran: web build OK, root api 81 / web 22 / crypto 15 /
+  shared-types 5, typecheck clean. Committed with ODD doc in one unit.
+
+## Status: the app is usable end-to-end (login + encrypted vault CRUD) pending a live DB.
+
 ## Next step
 
-W2 — Vault UI: vault API client, encrypt-before-send / decrypt-on-read (item plaintext = JSON
-{site,username,password}), list/create/edit/delete components (atomic design), wired into the
-protected /vault page. Then W3 (generator, copy-with-autoclear, auto-lock, polish).
+W3 — password generator + copy-to-clipboard with auto-clear + auto-lock on inactivity (wipe
+key) + responsive polish. Also fold in W1 follow-ups: FU-W-1 (api-client timeout/AbortController),
+FU-W-2 (register two-phase 409 UX), FU-W-3 (test use-auth-submit). Then: deploy block (needs
+accounts) + hardening backlog (rate-limiting, pagination) + TFM deliverables (slides, video,
+README, demo account). Deadline 2026-10-26.
