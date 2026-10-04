@@ -55,9 +55,25 @@ Strict TDD: tests first → RED → minimal GREEN → REFACTOR. RED/GREEN eviden
   DONE.
 - [ ] **A2** Prisma schema change (User: `authHashHash`, `authSalt`, `encSalt`,
   `kdfParams`; drop old `authHash`/`kdfSalt`) + `PrismaUserRepository` + `prisma generate`.
+  MUST (review R4): make create atomic — catch the Prisma unique-constraint violation
+  (P2002) and throw `EmailAlreadyRegisteredError`, so concurrent duplicate registration
+  returns a graceful 409, not a raw 500. Fix the shared-types dist resolution debt here
+  or in A3.
 - [ ] **A3** Express routes (`POST /auth/register`, `GET /auth/params`,
   `POST /auth/login`) with Zod validation + composition root wiring real adapters +
   `JWT_SECRET` in `.env.example`.
+  SHOULD (review R1 + R3-timing): enumeration hardening — uniform responses/errors and
+  equalized timing (dummy verify on unknown email) so `getAuthParams`/login don't reveal
+  which emails exist.
+
+### Review follow-ups (from A1 4-lens review, lineage review-5e5f34dc5defad43, APPROVED)
+
+- [ ] **FU-A-1** (R4, resilience WARNING) → folded into A2 (atomic create / P2002 mapping).
+- [ ] **FU-A-2** (R1 risk + R3 reliability, enumeration) → folded into A3 (hardening).
+- [ ] **FU-A-3** (R2 readability SUGGESTION) doc-comment `StoredUser.authHashHash` /
+  `NewUser.authHashHash` = "server-side hash of the client authHash; never the raw value".
+- [ ] **FU-A-4** (R3 reliability SUGGESTION) add tests for the two untested defensive
+  branches: JWT valid-signature-but-missing/non-string-`sub`; scrypt odd-hex-length guard.
 
 ## Authorized scope
 
@@ -100,7 +116,13 @@ Strict TDD: tests first → RED → minimal GREEN → REFACTOR. RED/GREEN eviden
   re-ran root `npm test` → api 19, web 1, crypto 15, shared-types 3 all green; root
   `npm run typecheck` clean. shared-types resolution debt logged above.
 
+- 2026-10-04: A1 committed `0325d34` (`feat(api): ...`). RDD assess=HIGH (hot_path/auth),
+  user GRANTED. 4-lens native review (risk/resilience/readability/reliability, lineage
+  review-5e5f34dc5defad43) → APPROVED, authority burned, NO blocking corrections. 6
+  advisory findings recorded as FU-A-1..4 (R4→A2, enumeration→A3, 2 minor suggestions).
+
 ## Next step
 
-Commit A1 + RDD. Then A2 (Prisma schema change + PrismaUserRepository) and A3 (Express
-routes + Zod validation + composition root + JWT_SECRET; FIX shared-types dist resolution).
+A2 (Prisma schema change + PrismaUserRepository, incl. atomic create / P2002 → 409) and
+A3 (Express routes + Zod validation + composition root + JWT_SECRET; fix shared-types dist
+resolution; enumeration hardening). Deferred deploy block still pending.
