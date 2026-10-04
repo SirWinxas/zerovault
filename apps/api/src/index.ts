@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { app } from "./app.js";
 import { buildAuthRouter } from "./auth/composition.js";
+import { buildVaultRouter } from "./vault/composition.js";
 
 export { app };
 
@@ -10,6 +11,7 @@ export { app };
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {
   app.use("/auth", buildAuthRouter());
+  app.use("/vault", buildVaultRouter());
   const port = Number(process.env.PORT ?? 3000);
   app.listen(port, () => {
     console.log(`API listening on :${port}`);

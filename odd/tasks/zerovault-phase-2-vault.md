@@ -42,9 +42,12 @@ CRUD for the user's encrypted vault items over the API. The server stores only
   deleteMany(where {id,userId}) → count>0. DI'd `PrismaVaultClient`, unit-tested with a
   fake that asserts `userId` in every where. No schema change (VaultItem already existed).
   65 api tests. DONE.
-- [ ] **V3** JWT auth middleware (verify token → `req.userId`, 401 on missing/invalid) +
-  vault HTTP routes (`POST/GET/PUT/DELETE /vault`) + Zod validation + composition +
-  error mapping (404 for not-found/not-owned). Wire into index.ts.
+- [x] **V3** `createRequireAuth` JWT middleware (Bearer → verify → `req.userId`; clean 401
+  on missing/malformed/invalid/expired, no leak) + vault router (`POST/GET/PUT/DELETE /vault`,
+  userId from request context never body) + Zod validation + error mapping (400/404/500) +
+  `buildVaultRouter` composition (requireAuth then routes, requires JWT_SECRET) + mounted in
+  index.ts under isMain. `req.userId` typed via `src/types/express-request.d.ts`. 81 api
+  tests (16 new incl. integration: no token → 401, use cases never called). DONE.
 
 ## Authorized scope
 
@@ -78,11 +81,21 @@ Strict TDD: tests first → RED → GREEN → REFACTOR. Evidence captured.
   findByIdForUser; ownership asserted in tests. Re-ran: api 65 / web 1 / crypto 15 /
   shared-types 5, typecheck clean. Committed with ODD doc in one unit.
 
-## Next step
+- 2026-10-04: V3 built by writer (TDD). Parent review of auth-middleware + vault-router:
+  correct — Bearer verify with clean 401 (no leak); userId flows from verified JWT →
+  req.userId → use cases (never from body); 400/404/500 mapping. End-to-end ownership
+  boundary closed. Re-ran: api 81 / web 1 / crypto 15 / shared-types 5, typecheck clean.
+  Committed with ODD doc in one unit.
 
-V3 — JWT auth middleware (verify token via JwtTokenService → `req.userId`; 401 on
-missing/invalid/expired) + vault HTTP routes (`POST /vault`, `GET /vault`, `PUT /vault/:id`,
-`DELETE /vault/:id`) with Zod validation + composition (PrismaVaultRepository) + error
-mapping (404 for VaultItemNotFoundError) + mount in index.ts. Then Phase 2 is complete.
-Minor V1 follow-ups (dedupe Create/Update schema; VaultItemDTO vs VaultItemResponse) can
-ride along in V3 or later.
+## Status: PHASE 2 (vault CRUD) COMPLETE (pending live DB for e2e)
+
+Done: V1 domain/use-cases, V2 Prisma repo, V3 HTTP + JWT middleware. Full authenticated,
+ownership-isolated, zero-knowledge vault CRUD over HTTP. api test count: 81.
+
+## Remaining big items (whole project)
+
+1. Web client — register/login + vault UI, wiring @zerovault/crypto (keys in memory only).
+2. Deferred deploy block — GitHub public repo, Vercel (web) + Railway (api) + Neon (DB),
+   prisma migrate against Neon, seed demo account, e2e smoke test, README URLs.
+3. Auth hardening FU-A-7 (rate-limiting) before deploy; minor FU-A-4/6, V1 schema dedupe.
+4. TFM deliverables: slides, video, test account in README + submission form (deadline 2026-10-26).
