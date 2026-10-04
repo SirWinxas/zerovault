@@ -8,13 +8,14 @@ datasource db {
 }
 
 model User {
-  id        String      @id @default(cuid())
-  email     String      @unique
-  authHash  String
-  kdfSalt   String
-  kdfParams Json
-  createdAt DateTime    @default(now())
-  items     VaultItem[]
+  id           String      @id @default(cuid())
+  email        String      @unique
+  authHashHash String
+  authSalt     String
+  encSalt      String
+  kdfParams    Json
+  createdAt    DateTime    @default(now())
+  items        VaultItem[]
 }
 
 model VaultItem {

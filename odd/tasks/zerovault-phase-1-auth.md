@@ -53,12 +53,11 @@ Strict TDD: tests first → RED → minimal GREEN → REFACTOR. RED/GREEN eviden
   GREEN, typecheck clean. Security extras by writer: JWT algorithm pinned to HS256
   (blocks alg:none/confusion), empty-secret guard, malformed-input-safe hasher.
   DONE.
-- [ ] **A2** Prisma schema change (User: `authHashHash`, `authSalt`, `encSalt`,
-  `kdfParams`; drop old `authHash`/`kdfSalt`) + `PrismaUserRepository` + `prisma generate`.
-  MUST (review R4): make create atomic — catch the Prisma unique-constraint violation
-  (P2002) and throw `EmailAlreadyRegisteredError`, so concurrent duplicate registration
-  returns a graceful 409, not a raw 500. Fix the shared-types dist resolution debt here
-  or in A3.
+- [x] **A2** Prisma schema change (User: `authHashHash`, `authSalt`, `encSalt`,
+  `kdfParams`; dropped `authHash`/`kdfSalt`) + `PrismaUserRepository` + `prisma generate`.
+  Atomic create: catches Prisma `P2002` → `EmailAlreadyRegisteredError` (review R4 fixed).
+  DI'd `PrismaUserClient` so it is unit-tested with a fake (no live DB). 5 new tests.
+  Type-only shared-types import (dist debt still deferred to A3). DONE.
 - [ ] **A3** Express routes (`POST /auth/register`, `GET /auth/params`,
   `POST /auth/login`) with Zod validation + composition root wiring real adapters +
   `JWT_SECRET` in `.env.example`.
@@ -68,7 +67,7 @@ Strict TDD: tests first → RED → minimal GREEN → REFACTOR. RED/GREEN eviden
 
 ### Review follow-ups (from A1 4-lens review, lineage review-5e5f34dc5defad43, APPROVED)
 
-- [ ] **FU-A-1** (R4, resilience WARNING) → folded into A2 (atomic create / P2002 mapping).
+- [x] **FU-A-1** (R4, resilience WARNING) → DONE in A2 (atomic create, P2002 → EmailAlreadyRegisteredError, tested).
 - [ ] **FU-A-2** (R1 risk + R3 reliability, enumeration) → folded into A3 (hardening).
 - [ ] **FU-A-3** (R2 readability SUGGESTION) doc-comment `StoredUser.authHashHash` /
   `NewUser.authHashHash` = "server-side hash of the client authHash; never the raw value".
@@ -121,8 +120,14 @@ Strict TDD: tests first → RED → minimal GREEN → REFACTOR. RED/GREEN eviden
   review-5e5f34dc5defad43) → APPROVED, authority burned, NO blocking corrections. 6
   advisory findings recorded as FU-A-1..4 (R4→A2, enumeration→A3, 2 minor suggestions).
 
+- 2026-10-04: A2 built by writer (TDD). Parent review of PrismaUserRepository: correct
+  (atomic create, P2002→EmailAlreadyRegisteredError, type-only shared-types import, DI'd
+  for DB-less testing). Re-ran: prisma generate OK, root tests api 24 / web 1 / crypto 15 /
+  shared-types 3, typecheck clean. Committed with the ODD doc in one work unit.
+
 ## Next step
 
-A2 (Prisma schema change + PrismaUserRepository, incl. atomic create / P2002 → 409) and
-A3 (Express routes + Zod validation + composition root + JWT_SECRET; fix shared-types dist
-resolution; enumeration hardening). Deferred deploy block still pending.
+A3 — Express routes (`POST /auth/register`, `GET /auth/params`, `POST /auth/login`) with
+Zod validation + composition root (wire real adapters, `JWT_SECRET`) + FIX shared-types
+dist resolution (first runtime Zod import) + enumeration hardening (FU-A-2). Needs a live
+DB (Neon) only for end-to-end run, not for route unit tests. Deferred deploy block pending.
