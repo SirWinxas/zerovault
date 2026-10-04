@@ -55,8 +55,11 @@ GREEN → REFACTOR. RED and GREEN evidence recorded; no invented evidence.
   NOTE/deviation: writer produced the tidy implementation in ONE pass (combined
   GREEN+REFACTOR), so there was no separate minimal-GREEN run before refactor. The
   test-first invariant held (RED captured before any implementation). DONE.
-- [ ] **P1-5** Work-unit commit (conventional) incl. this ODD doc; then RDD
-  assess/consent (crypto = expect medium/high → relay consent to user).
+- [x] **P1-5** Work-unit commit `d8c73c3` (`feat(crypto): ...`). RDD: assess=medium
+  (slice_budget_reached; package-lock noise). User GRANTED. Native review
+  (lineage review-53e6854e83486ab0, lens review-reliability) → APPROVED, authority
+  burned. 1 non-blocking SUGGESTION R3-001 (fatal-decode path unreachable because
+  GCM auth precedes decode — no action needed). DONE.
 
 ## Authorized scope
 
@@ -92,6 +95,7 @@ GREEN → REFACTOR. RED and GREEN evidence recorded; no invented evidence.
 
 ## Next step
 
-P1-5: work-unit commit (crypto package + this doc + package-lock), then RDD
-assess/consent. After that, the rest of Phase 1: API `auth` module + web login flow
-(separate features), where `@zerovault/crypto` gets wired in.
+Crypto core COMPLETE (commit d8c73c3, reviewed/approved). Remaining Phase 1 work
+(separate ODD features): API `auth` module (register/login + JWT; schema change to
+two salts; server-side hashing of the received authHash) and the web register/login
+flow wiring `@zerovault/crypto` in. Optional hardening: `Object.freeze(DEFAULT_KDF_PARAMS)`.
