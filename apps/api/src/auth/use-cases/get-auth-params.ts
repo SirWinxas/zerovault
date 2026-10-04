@@ -1,21 +1,20 @@
 import type { AuthParamsResponse } from "@zerovault/shared-types";
-import { InvalidCredentialsError } from "../domain/errors.js";
+import type { Decoy } from "../adapters/decoy.js";
 import type { UserRepository } from "../ports/user-repository.js";
 
 export interface GetAuthParamsDeps {
   users: UserRepository;
+  decoy: Decoy;
 }
 
-export function makeGetAuthParams({ users }: GetAuthParamsDeps) {
+export function makeGetAuthParams({ users, decoy }: GetAuthParamsDeps) {
   return async function getAuthParams(email: string): Promise<AuthParamsResponse> {
     const user = await users.findByEmail(email);
-    if (!user) {
-      // MVP LIMITATION: this allows user enumeration (unknown emails fail,
-      // known emails succeed). A future hardening step should return
-      // deterministic fake params (e.g. HMAC(serverSecret, email)) for
-      // unknown emails so both cases are indistinguishable.
-      throw new InvalidCredentialsError();
+    if (user) {
+      return { authSalt: user.authSalt, kdfParams: user.kdfParams };
     }
-    return { authSalt: user.authSalt, kdfParams: user.kdfParams };
+    // Unknown email: return deterministic decoy params so known and unknown
+    // emails are indistinguishable (no account-enumeration oracle).
+    return { authSalt: decoy.saltFor(email), kdfParams: decoy.kdfParams };
   };
 }

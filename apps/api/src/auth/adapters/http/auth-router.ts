@@ -49,6 +49,7 @@ function handleAuthError(err: unknown, _req: Request, res: Response, _next: Next
   } else if (err instanceof InvalidCredentialsError) {
     res.status(401).json({ error: "InvalidCredentials" });
   } else {
+    console.error("Unhandled auth error:", err);
     res.status(500).json({ error: "InternalError" });
   }
 }

@@ -8,12 +8,15 @@ export interface LoginUserDeps {
   users: UserRepository;
   hasher: Hasher;
   tokens: TokenService;
+  decoyHash: string;
 }
 
-export function makeLoginUser({ users, hasher, tokens }: LoginUserDeps) {
+export function makeLoginUser({ users, hasher, tokens, decoyHash }: LoginUserDeps) {
   return async function loginUser(input: LoginRequest): Promise<LoginResponse> {
     const user = await users.findByEmail(input.email);
     if (!user) {
+      // Equalize timing with the wrong-password path; result is intentionally ignored.
+      await hasher.verify(input.authHash, decoyHash);
       throw new InvalidCredentialsError();
     }
 

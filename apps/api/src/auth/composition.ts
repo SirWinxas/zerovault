@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import type { Router } from "express";
 import { createAuthRouter } from "./adapters/http/auth-router.js";
+import { createDecoy } from "./adapters/decoy.js";
 import { JwtTokenService } from "./adapters/jwt-token-service.js";
 import { PrismaUserRepository } from "./adapters/prisma-user-repository.js";
 import { ScryptHasher } from "./adapters/scrypt-hasher.js";
@@ -15,6 +16,12 @@ export function buildAuthRouter(): Router {
     throw new Error("JWT_SECRET environment variable is required and must not be empty");
   }
 
+  const pepper = process.env.AUTH_PEPPER;
+  if (!pepper) {
+    throw new Error("AUTH_PEPPER environment variable is required and must not be empty");
+  }
+  const decoy = createDecoy(pepper);
+
   // PrismaClient connects lazily on first query.
   const prisma = new PrismaClient();
   const users = new PrismaUserRepository(prisma);
@@ -23,7 +30,7 @@ export function buildAuthRouter(): Router {
 
   return createAuthRouter({
     registerUser: makeRegisterUser({ users, hasher }),
-    loginUser: makeLoginUser({ users, hasher, tokens }),
-    getAuthParams: makeGetAuthParams({ users }),
+    loginUser: makeLoginUser({ users, hasher, tokens, decoyHash: decoy.hash }),
+    getAuthParams: makeGetAuthParams({ users, decoy }),
   });
 }

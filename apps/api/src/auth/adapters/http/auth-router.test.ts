@@ -49,6 +49,18 @@ describe("auth router", () => {
       expect(res.body).toEqual({ error: "EmailAlreadyRegistered" });
     });
 
+    it("logs unexpected errors server-side without leaking details", async () => {
+      const { app, registerUser } = setup();
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const err = new Error("boom");
+      registerUser.mockRejectedValueOnce(err);
+      const res = await request(app).post("/auth/register").send(registerBody);
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "InternalError" });
+      expect(spy).toHaveBeenCalledWith("Unhandled auth error:", err);
+      spy.mockRestore();
+    });
+
     it("returns 500 for unexpected errors", async () => {
       const { app, registerUser } = setup();
       registerUser.mockRejectedValueOnce(new Error("boom"));
@@ -102,11 +114,12 @@ describe("auth router", () => {
       expect(res.status).toBe(400);
     });
 
-    it("returns 401 on invalid credentials", async () => {
+    it("returns 200 with decoy params for an unknown email (no enumeration oracle)", async () => {
       const { app, getAuthParams } = setup();
-      getAuthParams.mockRejectedValueOnce(new InvalidCredentialsError());
-      const res = await request(app).get("/auth/params").query({ email: "a@b.com" });
-      expect(res.status).toBe(401);
+      getAuthParams.mockResolvedValueOnce({ authSalt: "decoy-salt", kdfParams });
+      const res = await request(app).get("/auth/params").query({ email: "ghost@b.com" });
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ authSalt: "decoy-salt", kdfParams });
     });
   });
 });

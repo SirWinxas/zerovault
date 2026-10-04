@@ -64,15 +64,23 @@ Strict TDD: tests first → RED → minimal GREEN → REFACTOR. RED/GREEN eviden
   index.ts guarded by `isMain` (tests stay DB-free) + shared-types runtime resolution via
   `tsx` (`start` script added) + FU-A-3 doc-comment. 11 supertest route tests (35 total).
   DONE. (getAuthParams still 401s on unknown email — enumeration, hardened in A3b.)
-- [ ] **A3b** Enumeration hardening (FU-A-2): `getAuthParams` returns a deterministic
-  decoy salt (HMAC(pepper, email)) + default params for unknown emails instead of 401;
-  `loginUser` runs a dummy verify on unknown email to equalize timing. Needs an
-  `AUTH_PEPPER`/decoy-hash dependency injected into the use cases.
+- [x] **A3b** Enumeration hardening (FU-A-2) + R4 logging. DONE:
+  - `decoy.ts` `createDecoy(pepper)`: `saltFor(email)` = HMAC-SHA256(pepper,email)[0:16] base64
+    (deterministic, unpredictable); `kdfParams` = default; `hash` = valid ScryptHasher-format
+    string (scryptSync) for timing parity.
+  - `getAuthParams`: unknown email → decoy salt + default params (no more 401).
+  - `loginUser`: unknown email → dummy `hasher.verify(decoyHash)` then InvalidCredentials
+    (timing equalized with the wrong-password path).
+  - `handleAuthError` 500 branch now `console.error`s the error (R4) without leaking it.
+  - `AUTH_PEPPER` required in composition + added to `.env.example`. 44 tests total.
 
 ### Review follow-ups (from A1 4-lens review, lineage review-5e5f34dc5defad43, APPROVED)
 
 - [x] **FU-A-1** (R4, resilience WARNING) → DONE in A2 (atomic create, P2002 → EmailAlreadyRegisteredError, tested).
-- [ ] **FU-A-2** (R1 risk + R3 reliability, enumeration) → folded into A3 (hardening).
+- [x] **FU-A-2** (R1 risk + R3 reliability, enumeration) → DONE in A3b (decoy salt + timing).
+- [x] **FU-A-5** (A3a review R4, resilience) → DONE in A3b: router 500 branch logs the error.
+- [ ] **FU-A-6** (A3a review R3, reliability SUGGESTION) assert the 400 `details` body shape
+  in a route test. Optional.
 - [x] **FU-A-3** (R2 readability SUGGESTION) DONE in A3a: doc-comment on
   `StoredUser.authHashHash` / `NewUser.authHashHash` and the Prisma schema field.
 - [ ] **FU-A-4** (R3 reliability SUGGESTION) add tests for the two untested defensive
@@ -135,9 +143,20 @@ Strict TDD: tests first → RED → minimal GREEN → REFACTOR. RED/GREEN eviden
   api 35 / web 1 / crypto 15 / shared-types 3, typecheck clean, prisma generate OK.
   shared-types runtime resolution solved via tsx `start`. Committed with ODD doc in one unit.
 
-## Next step
+- 2026-10-04: A3b built by writer (TDD). Parent review: decoy (HMAC salt + scrypt-format
+  timing hash) correct; getAuthParams/login no longer leak account existence; 500 now logged
+  without client leakage. Re-ran: root tests api 44 / web 1 / crypto 15 / shared-types 3,
+  typecheck clean, .env.example clean. Committed with ODD doc in one unit.
 
-A3b — enumeration hardening (FU-A-2). Then Phase 1 (crypto + auth) is functionally complete
-pending live DB. Remaining big items: VaultItem CRUD (Phase 2), web client (register/login
-+ vault, wiring @zerovault/crypto), and the deferred deploy block (GitHub/Vercel/Railway/Neon)
-+ end-to-end run against Neon. Optional: FU-A-4 (test 2 defensive branches).
+## Status: Phase 1 (crypto + auth) FUNCTIONALLY COMPLETE (pending live DB for e2e)
+
+Done: crypto core; auth A1 (domain/use-cases/adapters), A2 (Prisma repo), A3a (HTTP routes),
+A3b (enumeration + logging). Open optional: FU-A-4 (test JWT missing-sub + scrypt odd-hex),
+FU-A-6 (assert 400 details).
+
+## Next big items (separate features)
+
+1. Phase 2 — `VaultItem` CRUD (hexagonal vault domain + routes, client encrypts before upload).
+2. Web client — register/login flow + vault UI, wiring `@zerovault/crypto` (keys in memory only).
+3. Deferred deploy block — GitHub public repo, Vercel (web) + Railway (api) + Neon (DB),
+   run Prisma migrate against Neon, seed demo account, end-to-end smoke test.
