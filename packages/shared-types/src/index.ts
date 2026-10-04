@@ -40,3 +40,22 @@ export const VaultItemDTOSchema = z.object({
   iv: z.string(),
 });
 export type VaultItemDTO = z.infer<typeof VaultItemDTOSchema>;
+
+export const CreateVaultItemRequestSchema = z.object({
+  ciphertext: z.string().min(1),
+  iv: z.string().min(1),
+});
+export type CreateVaultItemRequest = z.infer<typeof CreateVaultItemRequestSchema>;
+
+export const UpdateVaultItemRequestSchema = z.object({
+  ciphertext: z.string().min(1),
+  iv: z.string().min(1),
+});
+export type UpdateVaultItemRequest = z.infer<typeof UpdateVaultItemRequestSchema>;
+
+export const VaultItemResponseSchema = z.object({
+  id: z.string(),
+  ciphertext: z.string(),
+  iv: z.string(),
+});
+export type VaultItemResponse = z.infer<typeof VaultItemResponseSchema>;
