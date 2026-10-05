@@ -76,6 +76,16 @@ npm run dev
 
 Web: http://localhost:5173 — API: http://localhost:3000
 
+### Environment variables
+
+| App       | Variable       | Required | Purpose                                                                 |
+| --------- | -------------- | -------- | ----------------------------------------------------------------------- |
+| `apps/api`| `DATABASE_URL` | yes      | PostgreSQL connection string.                                           |
+| `apps/api`| `JWT_SECRET`   | yes      | Signs session JWTs.                                                      |
+| `apps/api`| `WEB_ORIGIN`   | prod     | Allowed CORS origin(s), comma-separated. Unset = reflect any (dev only).|
+| `apps/api`| `PORT`         | no       | API port (default `3000`; injected by the host in production).          |
+| `apps/web`| `VITE_API_URL` | prod     | API base URL (no trailing slash). Unset = same-origin `/api` dev proxy. |
+
 ## Main features
 
 - Zero-knowledge registration and login (master password never leaves the client).

@@ -17,3 +17,6 @@ npm-debug.log*
 .idea/
 .vscode/
 *.local
+
+# codegraph index (per-checkout, never shared)
+.codegraph/
