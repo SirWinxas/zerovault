@@ -49,7 +49,12 @@ Split origins → the browser calls the API directly using `VITE_API_URL`.
 - [~] **D6** Close-out:
   - [x] End-to-end smoke test online (register → login → create entry) — passes.
   - [x] README live URLs filled (web, API, repo).
-  - [x] GitHub repo flipped to **PUBLIC** (secret scan clean; only `.env.example` placeholders).
+  - [x] Commit identity switched to the account's GitHub `noreply` email; full history
+        rewritten (filter-branch) to remove `[redacted]` and force-pushed
+        (verified 0 occurrences on GitHub). Fixes the Vercel Hobby "commit author not a
+        team member" deploy block.
+  - [x] Repo visibility: made PUBLIC, then set back to **PRIVATE** per user request.
+        **Flip to PUBLIC again before submission** (TFM requires a public repo).
   - [x] Register `demo@zerovault.app` / `ZeroVaultDemo2026!` via the web (verified: live
         `/auth/login` returns a token).
   - [x] Rotate the Neon DB password and update `DATABASE_URL` on Railway (verified: API +
