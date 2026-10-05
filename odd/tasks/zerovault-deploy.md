@@ -50,9 +50,17 @@ Split origins → the browser calls the API directly using `VITE_API_URL`.
   - [x] End-to-end smoke test online (register → login → create entry) — passes.
   - [x] README live URLs filled (web, API, repo).
   - [x] GitHub repo flipped to **PUBLIC** (secret scan clean; only `.env.example` placeholders).
-  - [ ] Register `demo@zerovault.app` / `ZeroVaultDemo2026!` via the web + add a sample entry.
-  - [ ] Rotate the Neon DB password (pasted in chat) and update `DATABASE_URL` on Railway.
+  - [x] Register `demo@zerovault.app` / `ZeroVaultDemo2026!` via the web (verified: live
+        `/auth/login` returns a token).
+  - [x] Rotate the Neon DB password and update `DATABASE_URL` on Railway (verified: API +
+        DB still live after redeploy via the login round-trip).
   - [ ] Slides + video (TFM deliverables, outside deploy scope).
+
+## Deploy status: COMPLETE (2026-10-05)
+
+Live: web https://zerovault-tawny.vercel.app · API https://zerovaultweb-production.up.railway.app ·
+repo (public) https://github.com/SirWinxas/zerovault. Full flow (register/login/encrypted CRUD)
+works in production. Only non-deploy TFM deliverables remain: slides + video.
 
 ## TDD mode
 
