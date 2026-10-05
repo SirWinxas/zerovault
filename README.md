@@ -82,6 +82,7 @@ Web: http://localhost:5173 — API: http://localhost:3000
 | --------- | -------------- | -------- | ----------------------------------------------------------------------- |
 | `apps/api`| `DATABASE_URL` | yes      | PostgreSQL connection string.                                           |
 | `apps/api`| `JWT_SECRET`   | yes      | Signs session JWTs.                                                      |
+| `apps/api`| `AUTH_PEPPER`  | yes      | Server-side pepper for the login decoy (anti user-enumeration).         |
 | `apps/api`| `WEB_ORIGIN`   | prod     | Allowed CORS origin(s), comma-separated. Unset = reflect any (dev only).|
 | `apps/api`| `PORT`         | no       | API port (default `3000`; injected by the host in production).          |
 | `apps/web`| `VITE_API_URL` | prod     | API base URL (no trailing slash). Unset = same-origin `/api` dev proxy. |

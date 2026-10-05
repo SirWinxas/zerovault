@@ -32,15 +32,22 @@ Split origins → the browser calls the API directly using `VITE_API_URL`.
         `.env*`; repo already tracks `apps/api/.env.example`). Added `WEB_ORIGIN`, `VITE_API_URL`.
   - [x] Verify: typecheck + build + `prisma generate` green; tests green
         (api incl. 2 new CORS, web 46, crypto 15, shared-types 5; exit 0).
-- [ ] **D2** GitHub repo + push (gh, account SirWinxas). Private first; flip to public
-      before submission (TFM requires public).
-- [ ] **D3** Neon DB → `DATABASE_URL`; generate initial migration locally, commit.
-- [ ] **D4** Railway API deploy: env (`DATABASE_URL`, `JWT_SECRET`, `WEB_ORIGIN`),
-        build `prisma generate`, release `prisma migrate deploy`, start `npm start`,
-        healthcheck `/health`. → API URL.
-- [ ] **D5** Vercel web deploy: root `apps/web`, `VITE_API_URL`=API URL. → web URL.
-        Then set `WEB_ORIGIN`=web URL on Railway and redeploy.
+- [x] **D2** GitHub repo + push. DONE: private repo `SirWinxas/zerovault` on GitHub,
+      `main` pushed. Flip to public before submission (TFM requires public).
+- [x] **D3** Neon DB + migration. DONE: Neon project `zerovault` (EU Frankfurt),
+      Postgres 18, db `zero_know`. Initial migration authored DB-less (`migrate diff`,
+      commit `e963aeb`) and applied in prod by Railway pre-deploy.
+- [x] **D4** Railway API deploy. DONE: service in project `illustrious-illumination`,
+      build `prisma:generate`, pre-deploy `migrate deploy` (applied init), start
+      `npm start`, healthcheck `/health`. Required envs: `DATABASE_URL`, `JWT_SECRET`,
+      **`AUTH_PEPPER`** (the missing one that crashed startup until added). Live:
+      `https://zerovaultweb-production.up.railway.app` → `/health` returns `{"status":"ok"}`.
+      Region US West (DB in EU — cross-region latency, acceptable for demo).
+- [ ] **D5** Vercel web deploy: root `apps/web`, `VITE_API_URL=https://zerovaultweb-production.up.railway.app`.
+        → web URL. Then set `WEB_ORIGIN`=web URL on Railway and redeploy.
 - [ ] **D6** Smoke-test online, seed `demo@zerovault.app`, fill README TBDs.
+      Also: flip GitHub repo to public; **rotate the Neon DB password** (it was pasted
+      in chat) and update `DATABASE_URL`.
 
 ## TDD mode
 
