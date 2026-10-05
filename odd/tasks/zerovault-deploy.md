@@ -43,11 +43,16 @@ Split origins → the browser calls the API directly using `VITE_API_URL`.
       **`AUTH_PEPPER`** (the missing one that crashed startup until added). Live:
       `https://zerovaultweb-production.up.railway.app` → `/health` returns `{"status":"ok"}`.
       Region US West (DB in EU — cross-region latency, acceptable for demo).
-- [ ] **D5** Vercel web deploy: root `apps/web`, `VITE_API_URL=https://zerovaultweb-production.up.railway.app`.
-        → web URL. Then set `WEB_ORIGIN`=web URL on Railway and redeploy.
-- [ ] **D6** Smoke-test online, seed `demo@zerovault.app`, fill README TBDs.
-      Also: flip GitHub repo to public; **rotate the Neon DB password** (it was pasted
-      in chat) and update `DATABASE_URL`.
+- [x] **D5** Vercel web deploy. DONE: https://zerovault-tawny.vercel.app (root `apps/web`,
+      `VITE_API_URL` set at build). `WEB_ORIGIN` set on Railway = that URL → CORS locked;
+      login re-verified OK.
+- [~] **D6** Close-out:
+  - [x] End-to-end smoke test online (register → login → create entry) — passes.
+  - [x] README live URLs filled (web, API, repo).
+  - [x] GitHub repo flipped to **PUBLIC** (secret scan clean; only `.env.example` placeholders).
+  - [ ] Register `demo@zerovault.app` / `ZeroVaultDemo2026!` via the web + add a sample entry.
+  - [ ] Rotate the Neon DB password (pasted in chat) and update `DATABASE_URL` on Railway.
+  - [ ] Slides + video (TFM deliverables, outside deploy scope).
 
 ## TDD mode
 
