@@ -97,15 +97,15 @@ Web: http://localhost:5173 — API: http://localhost:3000
 
 ## Test account
 
-> Filled in before submission.
-
-- Live URL: _TBD_
+- Live URL: https://zerovault-tawny.vercel.app
 - Email: `demo@zerovault.app`
-- Master password: _TBD_
+- Master password: `ZeroVaultDemo2026!`
 
 ## TFM deliverables
 
-- Deployment URL: _TBD_
+- Web (Vercel): https://zerovault-tawny.vercel.app
+- API (Railway): https://zerovaultweb-production.up.railway.app
+- Repository: https://github.com/SirWinxas/zerovault
 - Slides: _TBD_
 - Video: _TBD_
 
