@@ -3,6 +3,7 @@ import { useSession } from "../session/SessionContext";
 import { Button } from "../components/atoms/Button";
 import { LockIcon } from "../components/atoms/Icons";
 import { VaultItemForm } from "../components/molecules/VaultItemForm";
+import { VaultHealth } from "../components/organisms/VaultHealth";
 import { VaultList } from "../components/organisms/VaultList";
 import { createVaultService } from "../vault/vault-service";
 import type { DecryptedVaultItem, VaultEntry } from "../vault/vault-entry";
@@ -85,6 +86,8 @@ export default function VaultPage() {
           {error}
         </p>
       )}
+
+      {!loading && <VaultHealth items={items} />}
 
       {editing.kind === "none" ? (
         <div>
