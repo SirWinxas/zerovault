@@ -29,4 +29,28 @@ describe("LoginPage", () => {
     expect(screen.getByLabelText(/email/i)).toHaveValue("demo@zerovault.app");
     expect(screen.getByText(/demo account/i)).toBeInTheDocument();
   });
+
+  it("does not enable demo mode for a non-1 demo value such as ?demo=0", () => {
+    render(
+      <SessionProvider>
+        <MemoryRouter initialEntries={["/login?demo=0"]}>
+          <LoginPage />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
+    expect(screen.getByLabelText(/email/i)).toHaveValue("");
+    expect(screen.queryByText(/demo account/i)).not.toBeInTheDocument();
+  });
+
+  it("leaves the form empty with no demo param", () => {
+    render(
+      <SessionProvider>
+        <MemoryRouter initialEntries={["/login"]}>
+          <LoginPage />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
+    expect(screen.getByLabelText(/email/i)).toHaveValue("");
+    expect(screen.queryByText(/demo account/i)).not.toBeInTheDocument();
+  });
 });

@@ -8,7 +8,7 @@ export default function LoginPage() {
   const { auth } = useSession();
   const { pending, error, submit } = useAuthSubmit(auth.login);
   const [params] = useSearchParams();
-  const isDemo = params.has("demo");
+  const isDemo = params.get("demo") === "1";
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-5 p-4">
       <h1 className="font-display uppercase text-5xl leading-[0.8] tracking-tight text-center">

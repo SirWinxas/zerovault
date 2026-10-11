@@ -67,9 +67,22 @@ and add trust + conversion elements fitting a zero-knowledge password manager de
 ## Progress / notes (update)
 
 - Implemented via one delegated writer; verified by parent (test spot-check + live screenshots).
-- All source changes implemented and verified; NOT yet committed (awaiting user go for commit/push).
+- Committed as `1c4b2dc` on `main` (7 files, +314/-31) and pushed (`766e603..1c4b2dc`).
+- Deployed: Vercel rebuilt from the push; verified by Vite CSS content-hash match
+  (local `index-CgTOMfg1.css` == live `assets/index-CgTOMfg1.css`).
 - Files: `apps/web/index.html`, `src/lib/demo.ts` (new), `src/components/molecules/AuthForm.tsx`,
   `src/pages/LoginPage.tsx`, `src/pages/LoginPage.test.tsx`, `src/pages/LandingPage.tsx`.
+
+## Review (RDD) and follow-up
+
+- RDD review on `1c4b2dc` candidate: medium risk, 1 lens (`review-reliability`), APPROVED advisory-only.
+- R3-001 (WARNING) FIXED in follow-up: demo mode now uses `params.get("demo") === "1"` instead of
+  `params.has("demo")`, so `?demo=0`/`?demo=false` no longer enable the prefill. Added two LoginPage
+  tests (`?demo=0` stays empty; no param stays empty). Suite now 63 tests green.
+- R3-002 (SUGGESTION) DEFERRED: `AuthForm` seeds demo values only as initial `useState`; stale values
+  if the query changes while mounted. Low impact; revisit if client-side nav into/out of demo is added.
+- R3-003 (SUGGESTION) DEFERRED: no landing-page test covers the inert real `VaultItemCard` preview.
+  Follow-up test idea for later.
 
 ## Progress / notes
 
