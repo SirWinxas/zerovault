@@ -24,7 +24,15 @@ export function matchesTab(itemSite: string, tabUrl: string): boolean {
   return item === tab || tab.endsWith(`.${item}`) || item.endsWith(`.${tab}`);
 }
 
-/** Gate for autofill: the page the content script runs on must match the credential's site. */
+/**
+ * Gate for autofill. Stricter than `matchesTab`: fill only when the page host is
+ * the credential's host or a SUBDOMAIN of it — never the reverse (a subdomain-scoped
+ * credential must not fill on the broader parent domain). Note: without a public-suffix
+ * list this still treats registrable boundaries by dot only (documented limitation).
+ */
 export function shouldFill(credentialSite: string, pageUrl: string): boolean {
-  return matchesTab(credentialSite, pageUrl);
+  const cred = siteHostname(credentialSite);
+  const page = siteHostname(pageUrl);
+  if (!cred || !page) return false;
+  return page === cred || page.endsWith(`.${cred}`);
 }

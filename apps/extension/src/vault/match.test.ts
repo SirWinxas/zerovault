@@ -48,4 +48,13 @@ describe("shouldFill", () => {
     expect(shouldFill("github.com", "https://github.com.evil.example/")).toBe(false);
     expect(shouldFill("", "https://github.com/")).toBe(false);
   });
+
+  it("allows a subdomain of the credential site but NOT the parent (no reverse)", () => {
+    // A credential for github.com fills on its subdomains.
+    expect(shouldFill("github.com", "https://gist.github.com/")).toBe(true);
+    expect(shouldFill("github.com", "https://www.github.com/")).toBe(true);
+    // A credential scoped to a subdomain must NOT fill on the broader parent domain.
+    expect(shouldFill("sub.example.com", "https://example.com/")).toBe(false);
+    expect(shouldFill("accounts.google.com", "https://google.com/")).toBe(false);
+  });
 });

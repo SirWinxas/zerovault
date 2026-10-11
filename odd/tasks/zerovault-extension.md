@@ -136,8 +136,17 @@ ever sees ciphertext), shows the credentials for the active site, and autofills 
 - Popup dark theme: `src/popup.css` using the web's dark palette hex; popup width 340px; no Tailwind/deps.
 - README expanded (build, `VITE_API_URL=http://localhost:3000` dev note, load-unpacked, Web Store zip).
 - Checks: `npm run test -w apps/extension` 24 passed; typecheck clean; builds OK (parent spot-check: 24 passed).
-- Status: Slice 4 implemented + verified; NOT yet committed (awaiting RDD review + commit). F4 feature-complete
-  pending this commit; runtime (login + autofill on real pages) still to be verified by the user in Chrome.
+- Status: Slice 4 committed+pushed as `6eaf43c`.
+
+### Slice 4 follow-up — autofill gate tightening (review WARNING, option A)
+
+- `shouldFill` no longer delegates to `matchesTab`; it now allows fill ONLY when the page host equals the
+  credential host OR is a subdomain of it (`page === cred || page.endsWith("."+cred)`), dropping the
+  reverse case (a subdomain-scoped credential no longer fills on the broader parent). `matchesTab` is
+  unchanged (still used for the popup "This site" grouping). TDD: RED on the reverse case, then fixed.
+  Known limitation documented: no public-suffix (eTLD+1) list, so registrable boundaries are by dot only.
+- Checks: `npm run test -w apps/extension` 25 passed; typecheck clean; build OK.
+- F4 feature-complete. Runtime (login + autofill on real pages) still to be verified by the user in Chrome.
 
 ## Progress / notes
 
