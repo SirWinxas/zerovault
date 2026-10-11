@@ -9,6 +9,8 @@ interface AuthFormProps {
   pending: boolean;
   error: string | null;
   onSubmit: (email: string, masterPassword: string) => void;
+  initialEmail?: string;
+  initialPassword?: string;
 }
 
 /** Presentational email + master password form. */
@@ -18,9 +20,11 @@ export function AuthForm({
   pending,
   error,
   onSubmit,
+  initialEmail = "",
+  initialPassword = "",
 }: AuthFormProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState(initialPassword);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();

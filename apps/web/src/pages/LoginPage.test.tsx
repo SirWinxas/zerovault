@@ -17,4 +17,16 @@ describe("LoginPage", () => {
     expect(screen.getByLabelText(/master password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /log in/i })).toBeInTheDocument();
   });
+
+  it("prefills the demo account when ?demo=1", () => {
+    render(
+      <SessionProvider>
+        <MemoryRouter initialEntries={["/login?demo=1"]}>
+          <LoginPage />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
+    expect(screen.getByLabelText(/email/i)).toHaveValue("demo@zerovault.app");
+    expect(screen.getByText(/demo account/i)).toBeInTheDocument();
+  });
 });
