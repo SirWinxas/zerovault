@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  /* Palette: Cool Gray + Indigo (sober). Neutral base, one disciplined indigo accent;
-     red reserved for destructive actions and errors. */
-  --color-carbon: #1a1f2b; /* ink: borders, text, primary button */
-  --color-paper: #ffffff; /* surface */
-  --color-sky: #edeff4; /* page background + icon tiles */
-  --color-concrete: #cfd3dc; /* neutral gray */
-  --color-mist: #e9ebf1; /* section background */
-  --color-blue: #4c48d6; /* accent: input focus ring */
-  --color-mint: #3f9b74; /* success */
-  --color-lavender: #e7e8fb; /* accent-soft: notes, previews, summaries */
-  --color-ember: #b4232a; /* danger: errors, destructive actions */
-  --color-sunburst: #cdd0f4; /* highlight: featured plan, demo notice (dark text) */
-  --color-violet: #4c48d6; /* accent: button focus ring, checkbox */
+  /* Palette: Cool Gray + Indigo — DARK. Near-black cool base, light ink,
+     one indigo accent; colored panels are dark tints carrying light text. */
+  --color-carbon: #e9ebf1; /* light ink: borders, text, inverted primary button */
+  --color-paper: #1e2128; /* dark surface (cards) */
+  --color-sky: #15171c; /* page background + icon tiles */
+  --color-concrete: #3a3f4a; /* neutral gray */
+  --color-mist: #1a1d23; /* section background */
+  --color-blue: #8b87ff; /* accent: input focus ring */
+  --color-mint: #234a37; /* success panel (light text) */
+  --color-lavender: #262745; /* accent-soft: notes, previews, summaries */
+  --color-ember: #e5484d; /* danger: errors, destructive actions */
+  --color-sunburst: #353575; /* highlight: featured plan, demo notice */
+  --color-violet: #8b87ff; /* accent: button focus ring, checkbox */
 
   --font-display: Impact, "Haettenschweiler", "Arial Narrow Bold", "Arial Black", sans-serif;
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-:root { color-scheme: light; }
+:root { color-scheme: dark; }
 
 html, body {
   min-height: 100%;
