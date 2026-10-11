@@ -41,7 +41,7 @@ ever sees ciphertext), shows the credentials for the active site, and autofills 
       POST /auth/login, derive encryptionKey, GET /vault, decrypt items. A pure `origin`/site-matching
       helper (map a vault item's `site` to a hostname and match the active tab) with TDD. List the
       active site's credentials with copy username/password (auto-clear like the web app). Lock button.
-- [ ] T3 — Slice 3 (content script + autofill): detect login forms (username/email + password fields),
+- [x] T3 — Slice 3 (content script + autofill) DONE: detect login forms (username/email + password fields),
       request credentials for the page origin from the background, and fill them; handle the common
       cases (single form; basic multi-field). Pure detection/field-selection logic with TDD. Never
       expose secrets to the page beyond filling the input values on user action.
@@ -101,6 +101,26 @@ ever sees ciphertext), shows the credentials for the active site, and autofills 
   lock(), failed-login-keeps-session, and the concurrency guard. Suite now 14 tests.
 - Known MV3 caveat: the 20s clipboard clear runs on a popup `setTimeout`; if the popup is closed first,
   Chrome kills the timer and the clipboard is not cleared. A background/offscreen timer would fix it — deferred.
+
+### Slice 2 follow-up review (1ead64d) — minor findings deferred to Slice 4
+
+- WARNING (cosmetic): the LOGIN handler maps the "Login already in progress" guard rejection to the
+  generic credentials error. SUGGESTION: no tests for `clipboard.ts` or the popup error/timer paths; the
+  popup 1500ms hint timer is not cleared on unmount. All folded into Slice 4 (polish).
+
+### Slice 3 notes (content script + autofill) — committed-pending
+
+- User-initiated autofill only: popup "Fill" button (on the active-site group) → `chrome.tabs.sendMessage
+  (tabId, { type:"FILL", username, password })` → content script fills ONE credential. The content script
+  never gets all credentials, never holds the key, stores/logs nothing, and is gated by `sender.id`.
+- `src/content/detect.ts` (pure, 6 TDD tests): `pickLoginFields` = first `type=password` + nearest
+  preceding username by tiers (autocomplete username/email → type email → name/id/placeholder hint →
+  any text-like); null if no password or username. Content script maps DOM inputs → FieldInfo, fills via
+  the native value setter + input/change events (for React-controlled forms).
+- Caveats NOT handled: iframes (top frame only), shadow DOM, multi-step logins, password-only forms; no
+  DOM-fill or popup-button test (only the pure picker is tested); popup still light-themed (Slice 4).
+- Checks: `npm run test -w apps/extension` 20 passed; typecheck clean; builds OK (parent spot-check: 20 passed).
+- Status: Slice 3 implemented + verified; NOT yet committed (awaiting RDD review + commit).
 
 ## Progress / notes
 

@@ -2,7 +2,7 @@ import { StrictMode, useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { copyWithAutoClear } from "./lib/clipboard";
-import type { ItemsResponse, LockResponse, LoginResult, Message, StateResponse } from "./lib/messages";
+import type { FillMessage, FillResponse, ItemsResponse, LockResponse, LoginResult, Message, StateResponse } from "./lib/messages";
 import type { DecryptedItem } from "./vault/entry";
 import { matchesTab, siteHostname } from "./vault/match";
 
@@ -48,7 +48,7 @@ function LoginForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-function Row({ item }: { item: DecryptedItem }) {
+function Row({ item, tabId }: { item: DecryptedItem; tabId?: number }) {
   const [hint, setHint] = useState("");
   async function copy(label: string, value: string) {
     try {
@@ -59,26 +59,39 @@ function Row({ item }: { item: DecryptedItem }) {
     }
     setTimeout(() => setHint(""), 1500);
   }
+  async function fill() {
+    let msg = GENERIC_ERROR;
+    try {
+      const m: FillMessage = { type: "FILL", username: item.username, password: item.password };
+      const res = (await chrome.tabs.sendMessage(tabId!, m)) as FillResponse | undefined;
+      if (res) msg = res.filled ? "Filled" : "No login form found";
+    } catch {
+      // Content script unreachable (e.g. restricted page): show the generic hint.
+    }
+    setHint(msg);
+    setTimeout(() => setHint(""), 2000);
+  }
   return (
     <li style={{ borderBottom: "1px solid #ddd", padding: "6px 0", listStyle: "none" }}>
       <div style={{ fontWeight: 600 }}>{siteHostname(item.site) || item.site}</div>
       <div style={{ fontSize: 12, color: "#555" }}>{item.username} · ••••••••</div>
       <div style={{ display: "flex", gap: 6, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
+        {tabId !== undefined && <button type="button" onClick={fill}>Fill</button>}
         <button type="button" onClick={() => copy("Username", item.username)}>Copy username</button>
         <button type="button" onClick={() => copy("Password", item.password)}>Copy password</button>
-        <span aria-live="polite" style={{ fontSize: 11, color: hint === "Copy failed" ? "#b00020" : "#2e7d32" }}>{hint}</span>
+        <span aria-live="polite" style={{ fontSize: 11, color: hint === "Copy failed" || hint === GENERIC_ERROR || hint === "No login form found" ? "#b00020" : "#2e7d32" }}>{hint}</span>
       </div>
     </li>
   );
 }
 
-function Group({ title, items }: { title: string; items: DecryptedItem[] }) {
+function Group({ title, items, tabId }: { title: string; items: DecryptedItem[]; tabId?: number }) {
   if (items.length === 0) return null;
   return (
     <section>
       <h2 style={{ fontSize: 13, margin: "12px 0 4px" }}>{title}</h2>
       <ul style={{ margin: 0, padding: 0 }}>
-        {items.map((i) => <Row key={i.id} item={i} />)}
+        {items.map((i) => <Row key={i.id} item={i} tabId={tabId} />)}
       </ul>
     </section>
   );
@@ -87,6 +100,7 @@ function Group({ title, items }: { title: string; items: DecryptedItem[] }) {
 function VaultList({ onLock }: { onLock: () => void }) {
   const [items, setItems] = useState<DecryptedItem[] | null>(null);
   const [tabUrl, setTabUrl] = useState("");
+  const [tabId, setTabId] = useState<number | undefined>();
 
   const [error, setError] = useState("");
 
@@ -96,6 +110,7 @@ function VaultList({ onLock }: { onLock: () => void }) {
       try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         url = tab?.url ?? "";
+        setTabId(tab?.id);
       } catch {
         // No tab info: everything is listed under "All items".
       }
@@ -122,7 +137,7 @@ function VaultList({ onLock }: { onLock: () => void }) {
     <div>
       <button type="button" onClick={lock}>Lock</button>
       {error && <p role="alert" style={{ color: "#b00020", margin: "4px 0 0", fontSize: 12 }}>{error}</p>}
-      <Group title="This site" items={here} />
+      <Group title="This site" items={here} tabId={tabId} />
       <Group title={here.length ? "Other" : "All items"} items={rest} />
       {items.length === 0 && <p style={{ fontSize: 12 }}>Your vault is empty.</p>}
     </div>
