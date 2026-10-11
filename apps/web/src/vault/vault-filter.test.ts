@@ -80,6 +80,11 @@ describe("filterVaultItems", () => {
     expect(filterVaultItems(items, { tags: ["work", "finance"] })).toEqual([]);
   });
 
+  it("matches selected tags case-insensitively", () => {
+    expect(filterVaultItems(items, { tags: ["WORK"] })).toEqual([github]);
+    expect(filterVaultItems(items, { tags: ["Work", "DEV"] })).toEqual([github]);
+  });
+
   it("combines query and tags (both must match)", () => {
     expect(filterVaultItems(items, { query: "alice", tags: ["work"] })).toEqual([github]);
     expect(filterVaultItems(items, { query: "bob", tags: ["work"] })).toEqual([]);

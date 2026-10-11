@@ -29,9 +29,15 @@ export default function VaultPage() {
   const [query, setQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const tags = useMemo(() => allTags(items), [items]);
+  // Drop any selected tag that no longer exists (e.g. its last item was deleted),
+  // so a vanished chip cannot leave the list stuck on an invisible filter.
+  const activeTags = useMemo(
+    () => selectedTags.filter((t) => tags.includes(t)),
+    [selectedTags, tags],
+  );
   const visible = useMemo(
-    () => filterVaultItems(items, { query, tags: selectedTags }),
-    [items, query, selectedTags],
+    () => filterVaultItems(items, { query, tags: activeTags }),
+    [items, query, activeTags],
   );
   const toggleTag = (tag: string) =>
     setSelectedTags((prev) =>

@@ -28,14 +28,15 @@ export function filterVaultItems(
   { query = "", tags = [] }: VaultFilterCriteria,
 ): DecryptedVaultItem[] {
   const q = query.trim().toLowerCase();
+  const wanted = tags.map((t) => t.toLowerCase());
   return items.filter((item) => {
-    const itemTags = item.tags ?? [];
-    if (!tags.every((t) => itemTags.includes(t))) return false;
+    const itemTags = (item.tags ?? []).map((t) => t.toLowerCase());
+    if (!wanted.every((t) => itemTags.includes(t))) return false;
     if (!q) return true;
     return (
       item.site.toLowerCase().includes(q) ||
       item.username.toLowerCase().includes(q) ||
-      itemTags.some((t) => t.toLowerCase().includes(q))
+      itemTags.some((t) => t.includes(q))
     );
   });
 }

@@ -81,8 +81,18 @@ selected, an item must contain ALL selected tags (AND narrowing); search text an
 - Writer deviations (accepted): empty-filter status line "No items match your search."; no VaultPage
   component test (heavy mocks; filter covered by unit tests); a selected tag whose items are all
   deleted stays active with its chip gone (minor edge).
-- Status: all source changes implemented and verified; NOT yet committed (awaiting RDD review + commit).
+- Status: F3 committed+pushed as `41b8d3a`. Follow-up (review findings) implemented, pending its commit.
 - Branch: `main` (repo convention: main-only history). Prior: F1 `84dfc16`, F2 `e2bb10e` + follow-up `b4ac2ef`.
+
+## Follow-up — RDD review findings on 41b8d3a (resolved)
+
+- WARNING R3-stale-selected-tag — FIXED: `VaultPage` now derives `activeTags = selectedTags ∩ allTags(items)`
+  and filters with it, so a selected tag whose last item is gone is ignored (no stuck empty list).
+- SUGGESTION R3-tag-case-mismatch — FIXED (TDD): `filterVaultItems` lower-cases both selected and item
+  tags for the AND check; added a case-insensitive tag-filter test (RED first).
+- SUGGESTION R3-page-filter-untested — DEFERRED: a VaultPage integration test needs heavy session/vault
+  mocks; the filter + form are unit-tested and the stale-tag case is now robust by construction.
+- Checks after follow-up: `npm run test -w apps/web` 123 passed; typecheck clean; build OK.
 - Context: `VaultEntry = { site, username, password, totp? }`; whole entry is JSON-serialized and
   AES-GCM encrypted in `vault-service.seal` → adding `tags?` is ZK + backward compatible. `VaultList`
   is a pure presentational list (no existing filter); `VaultPage` holds `items` state.
