@@ -13,9 +13,22 @@ interface Session {
   items: DecryptedItem[];
 }
 
+/** Thrown when a login is attempted while another is still pending. */
+export class LoginInProgressError extends Error {
+  constructor() {
+    super("Login already in progress");
+    this.name = "LoginInProgressError";
+  }
+}
+
+export const DEFAULT_IDLE_MS = 15 * 60 * 1000;
+
 export interface SessionDeps {
   createApi: (getToken: () => string | null) => ApiClient;
   crypto: Pick<typeof realCrypto, "deriveAuthHash" | "deriveEncryptionKey" | "fromBase64" | "decrypt">;
+  /** Inactivity window before the vault locks itself. */
+  idleMs: number;
+  now: () => number;
 }
 
 export interface SessionManager {
@@ -29,7 +42,16 @@ export interface SessionManager {
 export function createSessionManager(deps: Partial<SessionDeps> = {}): SessionManager {
   const createApi = deps.createApi ?? createApiClient;
   const c = deps.crypto ?? realCrypto;
+  const idleMs = deps.idleMs ?? DEFAULT_IDLE_MS;
+  const now = deps.now ?? Date.now;
   let session: Session | null = null;
+  let lastActivity = 0;
+
+  /** Locks and returns false when idle past the limit. */
+  function alive(): boolean {
+    if (session && now() - lastActivity > idleMs) session = null;
+    return session !== null;
+  }
   // Concurrency guard: a login while another is pending is REJECTED (not queued),
   // so two attempts can never interleave or overwrite each other's result.
   let loginInFlight = false;
@@ -59,17 +81,22 @@ export function createSessionManager(deps: Partial<SessionDeps> = {}): SessionMa
 
   return {
     async login(email, masterPassword) {
-      if (loginInFlight) throw new Error("Login already in progress");
+      if (loginInFlight) throw new LoginInProgressError();
       loginInFlight = true;
       try {
         // Assigned only after the whole flow succeeds; failures never touch `session`.
         session = await buildSession(email, masterPassword);
+        lastActivity = now();
       } finally {
         loginInFlight = false;
       }
     },
-    state: () => (session ? { unlocked: true, email: session.email } : { unlocked: false }),
-    items: () => (session ? { items: session.items } : { items: [], locked: true }),
+    state: () => (alive() && session ? { unlocked: true, email: session.email } : { unlocked: false }),
+    items() {
+      if (!alive() || !session) return { items: [], locked: true };
+      lastActivity = now();
+      return { items: session.items };
+    },
     lock() {
       session = null;
     },

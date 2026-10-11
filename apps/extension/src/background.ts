@@ -1,5 +1,5 @@
 import type { LockResponse, LoginResult, Message } from "./lib/messages";
-import { createSessionManager } from "./background/session";
+import { createSessionManager, LoginInProgressError } from "./background/session";
 
 const sessions = createSessionManager();
 
@@ -11,10 +11,13 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
       sessions
         .login(msg.email, msg.masterPassword)
         .then(() => sendResponse({ ok: true } satisfies LoginResult))
-        .catch(() =>
+        .catch((err: unknown) =>
           sendResponse({
             ok: false,
-            error: "Login failed. Check your credentials and connection.",
+            error:
+              err instanceof LoginInProgressError
+                ? "A sign-in is already in progress."
+                : "Login failed. Check your credentials and connection.",
           } satisfies LoginResult),
         );
       return true;
@@ -32,3 +35,11 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
       return false;
   }
 });
+
+// Best-effort proactive idle lock; state()/items() also enforce it lazily.
+if (typeof chrome.alarms !== "undefined") {
+  chrome.alarms.create("zv-idle-check", { periodInMinutes: 1 });
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === "zv-idle-check") sessions.state();
+  });
+}

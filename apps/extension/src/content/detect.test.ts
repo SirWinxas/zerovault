@@ -35,3 +35,15 @@ describe("pickLoginFields", () => {
     expect(pickLoginFields(fields)).toEqual({ usernameIndex: 1, passwordIndex: 2 });
   });
 });
+
+describe("pickLoginFields edge cases", () => {
+  it("matches autocomplete with whitespace and mixed case", () => {
+    const fields = [f({ name: "login" }), f({ autocomplete: "  Username " }), f({ type: "password" })];
+    expect(pickLoginFields(fields)).toEqual({ usernameIndex: 1, passwordIndex: 2 });
+  });
+
+  it("uses the first password field when there are two", () => {
+    const fields = [f({ type: "email" }), f({ type: "password" }), f({ type: "password" })];
+    expect(pickLoginFields(fields)).toEqual({ usernameIndex: 0, passwordIndex: 1 });
+  });
+});

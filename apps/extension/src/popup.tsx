@@ -1,6 +1,7 @@
-import { StrictMode, useCallback, useEffect, useState } from "react";
+import { StrictMode, useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
+import "./popup.css";
 import { copyWithAutoClear } from "./lib/clipboard";
 import type { FillMessage, FillResponse, ItemsResponse, LockResponse, LoginResult, Message, StateResponse } from "./lib/messages";
 import type { DecryptedItem } from "./vault/entry";
@@ -37,49 +38,56 @@ function LoginForm({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <form onSubmit={submit} style={{ display: "grid", gap: 8 }}>
+    <form onSubmit={submit} className="zv-form">
       <input type="email" placeholder="Email" value={email} required autoComplete="username"
         onChange={(e) => setEmail(e.target.value)} />
       <input type="password" placeholder="Master password" value={master} required
         autoComplete="current-password" onChange={(e) => setMaster(e.target.value)} />
-      {error && <p role="alert" style={{ color: "#b00020", margin: 0, fontSize: 12 }}>{error}</p>}
-      <button type="submit" disabled={busy}>{busy ? "Unlocking..." : "Unlock"}</button>
+      {error && <p role="alert" className="zv-error">{error}</p>}
+      <button type="submit" className="zv-primary" disabled={busy}>{busy ? "Unlocking..." : "Unlock"}</button>
     </form>
   );
 }
 
 function Row({ item, tabId }: { item: DecryptedItem; tabId?: number }) {
   const [hint, setHint] = useState("");
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // No state updates after unmount: clear any pending hint timer.
+  useEffect(() => () => clearTimeout(timer.current), []);
+  function flash(text: string, ms: number) {
+    clearTimeout(timer.current);
+    setHint(text);
+    timer.current = setTimeout(() => setHint(""), ms);
+  }
   async function copy(label: string, value: string) {
     try {
       await copyWithAutoClear(value);
-      setHint(`${label} copied`);
+      flash(`${label} copied`, 1500);
     } catch {
-      setHint("Copy failed");
+      flash("Copy failed", 1500);
     }
-    setTimeout(() => setHint(""), 1500);
   }
   async function fill() {
     let msg = GENERIC_ERROR;
     try {
-      const m: FillMessage = { type: "FILL", username: item.username, password: item.password };
+      const m: FillMessage = { type: "FILL", site: item.site, username: item.username, password: item.password };
       const res = (await chrome.tabs.sendMessage(tabId!, m)) as FillResponse | undefined;
       if (res) msg = res.filled ? "Filled" : "No login form found";
     } catch {
       // Content script unreachable (e.g. restricted page): show the generic hint.
     }
-    setHint(msg);
-    setTimeout(() => setHint(""), 2000);
+    flash(msg, 2000);
   }
+  const bad = hint === "Copy failed" || hint === GENERIC_ERROR || hint === "No login form found";
   return (
-    <li style={{ borderBottom: "1px solid #ddd", padding: "6px 0", listStyle: "none" }}>
-      <div style={{ fontWeight: 600 }}>{siteHostname(item.site) || item.site}</div>
-      <div style={{ fontSize: 12, color: "#555" }}>{item.username} · ••••••••</div>
-      <div style={{ display: "flex", gap: 6, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
+    <li className="zv-row">
+      <div className="zv-site">{siteHostname(item.site) || item.site}</div>
+      <div className="zv-user">{item.username} · ••••••••</div>
+      <div className="zv-actions">
         {tabId !== undefined && <button type="button" onClick={fill}>Fill</button>}
         <button type="button" onClick={() => copy("Username", item.username)}>Copy username</button>
         <button type="button" onClick={() => copy("Password", item.password)}>Copy password</button>
-        <span aria-live="polite" style={{ fontSize: 11, color: hint === "Copy failed" || hint === GENERIC_ERROR || hint === "No login form found" ? "#b00020" : "#2e7d32" }}>{hint}</span>
+        <span aria-live="polite" className={bad ? "zv-hint zv-bad" : "zv-hint"}>{hint}</span>
       </div>
     </li>
   );
@@ -89,8 +97,8 @@ function Group({ title, items, tabId }: { title: string; items: DecryptedItem[];
   if (items.length === 0) return null;
   return (
     <section>
-      <h2 style={{ fontSize: 13, margin: "12px 0 4px" }}>{title}</h2>
-      <ul style={{ margin: 0, padding: 0 }}>
+      <h2 className="zv-group-title">{title}</h2>
+      <ul className="zv-list">
         {items.map((i) => <Row key={i.id} item={i} tabId={tabId} />)}
       </ul>
     </section>
@@ -129,17 +137,17 @@ function VaultList({ onLock }: { onLock: () => void }) {
   }
 
   if (!items) {
-    return error ? <p role="alert" style={{ color: "#b00020", fontSize: 12 }}>{error}</p> : <p>Loading...</p>;
+    return error ? <p role="alert" className="zv-error">{error}</p> : <p className="zv-empty">Loading...</p>;
   }
   const here = items.filter((i) => matchesTab(i.site, tabUrl));
   const rest = items.filter((i) => !here.includes(i));
   return (
     <div>
       <button type="button" onClick={lock}>Lock</button>
-      {error && <p role="alert" style={{ color: "#b00020", margin: "4px 0 0", fontSize: 12 }}>{error}</p>}
+      {error && <p role="alert" className="zv-error">{error}</p>}
       <Group title="This site" items={here} tabId={tabId} />
       <Group title={here.length ? "Other" : "All items"} items={rest} />
-      {items.length === 0 && <p style={{ fontSize: 12 }}>Your vault is empty.</p>}
+      {items.length === 0 && <p className="zv-empty">Your vault is empty.</p>}
     </div>
   );
 }
@@ -152,8 +160,8 @@ function Popup() {
   }, []);
 
   return (
-    <main style={{ width: 320, padding: 16, fontFamily: "system-ui, sans-serif" }}>
-      <h1 style={{ fontSize: 18, margin: "0 0 12px" }}>ZeroVault</h1>
+    <main className="zv-popup">
+      <h1 className="zv-title">ZeroVault</h1>
       {unlocked === null ? null : unlocked ? (
         <VaultList onLock={onLock} />
       ) : (

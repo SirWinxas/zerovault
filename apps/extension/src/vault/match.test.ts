@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesTab, siteHostname } from "./match";
+import { matchesTab, shouldFill, siteHostname } from "./match";
 
 describe("siteHostname", () => {
   it("normalizes bare hosts and lower-cases", () => {
@@ -38,5 +38,14 @@ describe("matchesTab", () => {
     expect(matchesTab("github.com", "")).toBe(false);
     expect(matchesTab("github.com", "chrome://extensions")).toBe(false);
     expect(matchesTab("???", "###")).toBe(false);
+  });
+});
+
+describe("shouldFill", () => {
+  it("allows a matching origin and refuses a mismatched or invalid one", () => {
+    expect(shouldFill("github.com", "https://github.com/login")).toBe(true);
+    expect(shouldFill("github.com", "https://evil.example/login")).toBe(false);
+    expect(shouldFill("github.com", "https://github.com.evil.example/")).toBe(false);
+    expect(shouldFill("", "https://github.com/")).toBe(false);
   });
 });

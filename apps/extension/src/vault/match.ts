@@ -23,3 +23,8 @@ export function matchesTab(itemSite: string, tabUrl: string): boolean {
   if (!item || !tab) return false;
   return item === tab || tab.endsWith(`.${item}`) || item.endsWith(`.${tab}`);
 }
+
+/** Gate for autofill: the page the content script runs on must match the credential's site. */
+export function shouldFill(credentialSite: string, pageUrl: string): boolean {
+  return matchesTab(credentialSite, pageUrl);
+}

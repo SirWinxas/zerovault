@@ -8,7 +8,7 @@ import {
 } from "@zerovault/crypto";
 import type { ApiClient } from "../lib/api";
 import type { VaultEntry } from "../vault/entry";
-import { createSessionManager } from "./session";
+import { createSessionManager, LoginInProgressError } from "./session";
 
 const EMAIL = "user@example.com";
 const MASTER = "correct horse battery staple";
@@ -121,11 +121,31 @@ describe("session manager", () => {
       createApi: mockApi({ expectedHash: fx.expectedHash, rows: [{ id: "a", ...fx.good }], gate }).factory,
     });
     const first = m.login(EMAIL, MASTER);
-    await expect(m.login(EMAIL, MASTER)).rejects.toThrow();
+    await expect(m.login(EMAIL, MASTER)).rejects.toBeInstanceOf(LoginInProgressError);
     release();
     await first;
     expect(m.state()).toEqual({ unlocked: true, email: EMAIL });
     // The guard is released afterwards.
     await expect(m.login(EMAIL, MASTER)).resolves.toBeUndefined();
+  });
+
+  it("auto-locks after the idle timeout and items() refreshes activity", async () => {
+    const fx = await buildFixture();
+    let t = 1_000;
+    const m = createSessionManager({
+      createApi: mockApi({ expectedHash: fx.expectedHash, rows: [{ id: "a", ...fx.good }] }).factory,
+      idleMs: 1000,
+      now: () => t,
+    });
+    await m.login(EMAIL, MASTER);
+    t += 999;
+    expect(m.state()).toEqual({ unlocked: true, email: EMAIL });
+    t += 1; // exactly idleMs since login: still unlocked (strictly greater locks)
+    expect(m.items().locked).toBeUndefined(); // refreshes activity
+    t += 900;
+    expect(m.state().unlocked).toBe(true); // would be locked without the refresh
+    t += 101; // 1001 since the refresh
+    expect(m.state()).toEqual({ unlocked: false });
+    expect(m.items()).toEqual({ items: [], locked: true });
   });
 });

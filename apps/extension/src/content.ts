@@ -1,5 +1,6 @@
 import { pickLoginFields } from "./content/detect";
 import type { FieldInfo } from "./content/detect";
+import { shouldFill } from "./vault/match";
 import type { FillMessage, FillResponse } from "./lib/messages";
 
 function setValue(input: HTMLInputElement, value: string): void {
@@ -30,6 +31,11 @@ function fill(username: string, password: string): boolean {
 chrome.runtime.onMessage.addListener((msg: FillMessage, sender, sendResponse: (r: FillResponse) => void) => {
   if (sender.id !== chrome.runtime.id) return false;
   if (msg?.type !== "FILL") return false;
+  // Defense in depth: refuse if the page is not the credential's site (e.g. tab navigated).
+  if (!shouldFill(String(msg.site), window.location.href)) {
+    sendResponse({ filled: false });
+    return false;
+  }
   try {
     sendResponse({ filled: fill(String(msg.username), String(msg.password)) });
   } catch {

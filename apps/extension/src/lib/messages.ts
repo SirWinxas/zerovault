@@ -9,6 +9,7 @@ export type Message =
 /** Popup -> content script. One credential, sent transiently on explicit user click. */
 export interface FillMessage {
   type: "FILL";
+  site: string;
   username: string;
   password: string;
 }

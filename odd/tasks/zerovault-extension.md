@@ -45,7 +45,7 @@ ever sees ciphertext), shows the credentials for the active site, and autofills 
       request credentials for the page origin from the background, and fill them; handle the common
       cases (single form; basic multi-field). Pure detection/field-selection logic with TDD. Never
       expose secrets to the page beyond filling the input values on user action.
-- [ ] T4 — Slice 4 (polish): idle lock/timeout, error + empty states, dark-theme parity with the web
+- [x] T4 — Slice 4 (hardening + polish) DONE: idle lock/timeout, error + empty states, dark-theme parity with the web
       UI (reuse tokens), and the load-unpacked README + notes on Web Store packaging.
 
 ## Constraints
@@ -120,7 +120,24 @@ ever sees ciphertext), shows the credentials for the active site, and autofills 
 - Caveats NOT handled: iframes (top frame only), shadow DOM, multi-step logins, password-only forms; no
   DOM-fill or popup-button test (only the pure picker is tested); popup still light-themed (Slice 4).
 - Checks: `npm run test -w apps/extension` 20 passed; typecheck clean; builds OK (parent spot-check: 20 passed).
-- Status: Slice 3 implemented + verified; NOT yet committed (awaiting RDD review + commit).
+- Status: Slice 3 committed+pushed as `d7bbccf`.
+
+### Slice 4 notes (hardening + polish) — closes F4
+
+- SECURITY (Slice-3 WARNING resolved): `FillMessage` carries `site`; `content.ts` calls pure
+  `shouldFill(site, window.location.href)` (= `matchesTab`) and refuses to fill on an origin mismatch.
+  Test covers match, different host, lookalike-suffix host (`github.com.evil.example`), and empty site.
+- Idle auto-lock: `session.ts` takes `idleMs` (default 15 min) + injectable `now`; locks when idle; activity
+  refreshed by `items()`. `background.ts` adds a 1-min `chrome.alarms` best-effort check (manifest gains
+  the `alarms` permission).
+- Slice-2 deferred minors resolved: `LoginInProgressError` → distinct popup message "A sign-in is already
+  in progress."; popup hint timer held in a ref and cleared before each new hint + on unmount.
+- detect tests extended (whitespace/case autocomplete; two password fields → first chosen).
+- Popup dark theme: `src/popup.css` using the web's dark palette hex; popup width 340px; no Tailwind/deps.
+- README expanded (build, `VITE_API_URL=http://localhost:3000` dev note, load-unpacked, Web Store zip).
+- Checks: `npm run test -w apps/extension` 24 passed; typecheck clean; builds OK (parent spot-check: 24 passed).
+- Status: Slice 4 implemented + verified; NOT yet committed (awaiting RDD review + commit). F4 feature-complete
+  pending this commit; runtime (login + autofill on real pages) still to be verified by the user in Chrome.
 
 ## Progress / notes
 
