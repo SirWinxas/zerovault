@@ -49,6 +49,18 @@ describe("VaultItemCard", () => {
     expect(screen.queryByLabelText("2FA code")).toBeNull();
   });
 
+  it("shows tag chips when the item has tags", () => {
+    render(
+      <VaultItemCard
+        item={{ ...item, tags: ["work", "dev"] }}
+        onEdit={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    expect(screen.getByText("work")).toBeTruthy();
+    expect(screen.getByText("dev")).toBeTruthy();
+  });
+
   it("renders a decrypt-error row with Delete only", async () => {
     const onDelete = vi.fn();
     render(

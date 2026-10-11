@@ -95,3 +95,29 @@ describe("VaultItemForm password generator", () => {
     expect(pw).toHaveLength(24);
   });
 });
+
+describe("VaultItemForm tags", () => {
+  it("submits parsed, de-duplicated, lower-cased tags", async () => {
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<VaultItemForm onSubmit={onSubmit} onCancel={vi.fn()} />);
+    await fillRequired(user);
+    await user.type(
+      screen.getByLabelText("Tags (comma-separated)"),
+      "Email, work , email",
+    );
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0][0].tags).toEqual(["email", "work"]);
+  });
+
+  it("omits tags when the field is empty", async () => {
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<VaultItemForm onSubmit={onSubmit} onCancel={vi.fn()} />);
+    await fillRequired(user);
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty("tags");
+  });
+});

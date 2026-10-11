@@ -137,6 +137,18 @@ export function VaultItemCard({ item, onEdit, onDelete }: VaultItemCardProps) {
               )}
             </div>
           )}
+          {item.tags && item.tags.length > 0 && (
+            <ul aria-label="Tags" className="mt-2 flex flex-wrap gap-1.5">
+              {item.tags.map((tag) => (
+                <li
+                  key={tag}
+                  className="rounded-full border-2 border-carbon px-2 py-0.5 text-xs font-semibold"
+                >
+                  {tag}
+                </li>
+              ))}
+            </ul>
+          )}
           {hint && (
             <p
               role="status"

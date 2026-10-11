@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "../atoms/Button";
 import { TextField } from "../atoms/TextField";
 import type { VaultEntry } from "../../vault/vault-entry";
+import { parseTags } from "../../vault/vault-filter";
 import { isValidBase32Secret, normalizeSecret } from "../../vault/totp";
 import {
   DEFAULT_PASSWORD_OPTIONS,
@@ -30,6 +31,7 @@ export function VaultItemForm({
     password: initial.password,
     totp: initial.totp ?? "",
   });
+  const [tagsText, setTagsText] = useState((initial.tags ?? []).join(", "));
   const [totpError, setTotpError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [genOpts, setGenOpts] = useState<PasswordOptions>(
@@ -74,6 +76,7 @@ export function VaultItemForm({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const { totp: totpText = "", ...base } = entry;
+    const tags = parseTags(tagsText);
     const normalized = normalizeSecret(totpText);
     if (normalized && !isValidBase32Secret(normalized)) {
       setTotpError("Invalid 2FA secret: use Base32 letters A-Z and digits 2-7");
@@ -82,7 +85,11 @@ export function VaultItemForm({
     setTotpError(null);
     setBusy(true);
     try {
-      await onSubmit(normalized ? { ...base, totp: normalized } : base);
+      await onSubmit({
+        ...base,
+        ...(normalized ? { totp: normalized } : {}),
+        ...(tags.length > 0 ? { tags } : {}),
+      });
     } finally {
       setBusy(false);
     }
@@ -148,6 +155,14 @@ export function VaultItemForm({
           {totpError}
         </p>
       )}
+      <TextField
+        label="Tags (comma-separated)"
+        autoComplete="off"
+        spellCheck={false}
+        placeholder="e.g. work, finance"
+        value={tagsText}
+        onChange={(e) => setTagsText(e.target.value)}
+      />
       <div className="flex flex-wrap gap-2">
         <Button type="submit" variant="primary" disabled={busy}>
           {submitLabel}

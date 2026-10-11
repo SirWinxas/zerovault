@@ -4,6 +4,8 @@ export interface VaultEntry {
   password: string;
   /** Optional normalized Base32 TOTP secret; lives only inside the encrypted blob. */
   totp?: string;
+  /** Optional free-form tags (lower-case); live only inside the encrypted blob. */
+  tags?: string[];
 }
 
 export interface DecryptedVaultItem extends VaultEntry {

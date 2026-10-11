@@ -98,6 +98,20 @@ describe("vault-service", () => {
     expect(items).toEqual([{ id: "8", ...withTotp }]);
   });
 
+  it("round-trips optional tags without sending them in plaintext", async () => {
+    const withTags: VaultEntry = { ...entry, tags: ["work", "finance-team"] };
+    const post = fakeApi({ post: { id: "10", ciphertext: "c", iv: "i" } });
+    await createVaultService(post.api, () => key).create(withTags);
+    const sent = post.calls[0].body as { ciphertext: string; iv: string };
+    expect(JSON.stringify(sent)).not.toContain("finance-team");
+
+    const items = await createVaultService(
+      fakeApi({ get: [{ id: "10", ...sent }] }).api,
+      () => key,
+    ).list();
+    expect(items).toEqual([{ id: "10", ...withTags }]);
+  });
+
   it("update PUTs only { ciphertext, iv } to /vault/:id", async () => {
     const { api, calls } = fakeApi({ put: { id: "9", ciphertext: "c", iv: "i" } });
     const updated = await createVaultService(api, () => key).update("9", entry);

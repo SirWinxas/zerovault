@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "../session/SessionContext";
 import { Button } from "../components/atoms/Button";
 import { LockIcon } from "../components/atoms/Icons";
+import { TextField } from "../components/atoms/TextField";
+import { allTags, filterVaultItems } from "../vault/vault-filter";
 import { VaultItemForm } from "../components/molecules/VaultItemForm";
 import { VaultHealth } from "../components/organisms/VaultHealth";
 import { VaultList } from "../components/organisms/VaultList";
@@ -23,6 +25,18 @@ export default function VaultPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Editing>({ kind: "none" });
+
+  const [query, setQuery] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const tags = useMemo(() => allTags(items), [items]);
+  const visible = useMemo(
+    () => filterVaultItems(items, { query, tags: selectedTags }),
+    [items, query, selectedTags],
+  );
+  const toggleTag = (tag: string) =>
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
 
   const reload = useCallback(async () => {
     setError(null);
@@ -104,11 +118,52 @@ export default function VaultPage() {
         />
       )}
 
+      {!loading && items.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <TextField
+            label="Search vault"
+            type="search"
+            autoComplete="off"
+            placeholder="Site, username or tag"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {tags.length > 0 && (
+            <div
+              role="group"
+              aria-label="Filter by tag"
+              className="flex flex-wrap gap-1.5"
+            >
+              {tags.map((tag) => {
+                const on = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-full border-2 border-carbon px-3 py-1 text-xs font-semibold focus-visible:ring-4 focus-visible:ring-blue/50 outline-none ${
+                      on ? "bg-carbon text-paper" : "bg-paper text-carbon"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <p className="text-carbon/80">Loading...</p>
+      ) : visible.length === 0 && items.length > 0 ? (
+        <p role="status" className="text-carbon/80">
+          No items match your search.
+        </p>
       ) : (
         <VaultList
-          items={items}
+          items={visible}
           onEdit={(item) => setEditing({ kind: "edit", item })}
           onDelete={(item) => run(() => vault.remove(item.id))}
         />
