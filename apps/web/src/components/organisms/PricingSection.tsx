@@ -66,18 +66,18 @@ function PlanCard({ plan, cycle }: { plan: Plan; cycle: BillingCycle }) {
           </span>
         )}
       </div>
-      <p className="text-sm font-medium text-carbon/70">{plan.tagline}</p>
+      <p className="text-sm font-medium text-carbon/80">{plan.tagline}</p>
 
       <div>
         <div className="flex items-end gap-1">
           <span className="font-display text-5xl leading-[0.8]">{perMonth}</span>
           {!free && (
-            <span className="pb-1 text-sm font-bold text-carbon/70">
+            <span className="pb-1 text-sm font-bold text-carbon/80">
               /mo{plan.perUser ? " · user" : ""}
             </span>
           )}
         </div>
-        <p className="mt-2 h-4 text-xs font-medium text-carbon/60">
+        <p className="mt-2 h-4 text-xs font-medium text-carbon/80">
           {free
             ? ""
             : cycle === "annual"
@@ -163,7 +163,7 @@ export default function PricingSection() {
           ))}
         </div>
 
-        <p className="mt-6 text-xs font-medium text-carbon/60">
+        <p className="mt-6 text-xs font-medium text-carbon/80">
           Prices in EUR. Checkout is a demo for this project — no real payment is
           processed.
         </p>

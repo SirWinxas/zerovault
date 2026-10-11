@@ -18,7 +18,7 @@ export default function RegisterPage() {
         error={error}
         onSubmit={submit}
       />
-      <p className="text-sm text-carbon/70">
+      <p className="text-sm text-carbon/80">
         Already registered?{" "}
         <Link className="font-bold underline underline-offset-2" to="/login">
           Log in

@@ -63,8 +63,8 @@ export function VaultItemCard({ item, onEdit, onDelete }: VaultItemCardProps) {
         </div>
         <div className="min-w-0">
           <p className="truncate text-[17px] font-bold">{item.site}</p>
-          <p className="truncate text-sm text-carbon/70">{item.username}</p>
-          <p className="truncate font-mono text-sm text-carbon/60">
+          <p className="truncate text-sm text-carbon/80">{item.username}</p>
+          <p className="truncate font-mono text-sm text-carbon/80">
             {visible ? item.password : "••••••••"}
           </p>
           {hint && (

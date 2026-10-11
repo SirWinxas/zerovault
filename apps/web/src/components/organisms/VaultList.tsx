@@ -14,7 +14,7 @@ export function VaultList({ items, onEdit, onDelete }: VaultListProps) {
       <div className="flex flex-col items-center gap-3 rounded-[20px] border-2 border-dashed border-carbon p-8 text-center">
         <LockIcon size={40} />
         <p className="font-bold">Nothing here yet.</p>
-        <p className="text-sm text-carbon/70">
+        <p className="text-sm text-carbon/80">
           Add your first credential and it is encrypted before it leaves this
           device.
         </p>

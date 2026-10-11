@@ -63,7 +63,7 @@ export default function VaultPage() {
           <h1 className="font-display uppercase text-5xl leading-[0.8]">
             Vault
           </h1>
-          <p className="mt-2 truncate text-sm text-carbon/70">
+          <p className="mt-2 truncate text-sm text-carbon/80">
             Signed in as {session?.email}
           </p>
         </div>
@@ -102,7 +102,7 @@ export default function VaultPage() {
       )}
 
       {loading ? (
-        <p className="text-carbon/60">Loading...</p>
+        <p className="text-carbon/80">Loading...</p>
       ) : (
         <VaultList
           items={items}

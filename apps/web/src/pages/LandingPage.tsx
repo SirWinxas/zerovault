@@ -31,7 +31,7 @@ function Feature({
         {icon}
       </div>
       <h3 className="text-lg font-bold leading-tight">{title}</h3>
-      <p className="text-sm text-carbon/70">{body}</p>
+      <p className="text-sm text-carbon/80">{body}</p>
     </div>
   );
 }
@@ -122,8 +122,8 @@ export default function LandingPage() {
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold">github.com</p>
-                <p className="truncate text-xs text-carbon/70">winxe</p>
-                <p className="truncate font-mono text-xs text-carbon/60">
+                <p className="truncate text-xs text-carbon/80">winxe</p>
+                <p className="truncate font-mono text-xs text-carbon/80">
                   {"•".repeat(10)}
                 </p>
               </div>
@@ -218,7 +218,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-xs text-carbon/60">
+      <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-xs text-carbon/80">
         ZeroVault · a zero-knowledge password manager.
       </footer>
     </div>

@@ -9,7 +9,7 @@ import {
 
 const field =
   "w-full rounded-[14px] border-2 border-carbon bg-paper px-3 py-2.5 text-sm font-medium outline-none focus:bg-sky";
-const label = "text-xs font-bold uppercase tracking-wide text-carbon/70";
+const label = "text-xs font-bold uppercase tracking-wide text-carbon/80";
 const ctaPrimary =
   "inline-flex items-center justify-center rounded-full border-2 border-carbon bg-carbon px-6 py-3 text-sm font-bold tracking-wide text-paper transition active:translate-y-px";
 const ctaSecondary =
@@ -73,10 +73,10 @@ export default function CheckoutPage() {
                 {perUser}
               </span>
             </div>
-            <p className="mt-1 text-xs font-medium text-carbon/60">
+            <p className="mt-1 text-xs font-medium text-carbon/80">
               {cycleLabel} · {plan.tagline}
             </p>
-            <ul className="mt-3 flex flex-col gap-1 border-t-2 border-carbon/10 pt-3 text-sm font-medium text-carbon/80">
+            <ul className="mt-3 flex flex-col gap-1 border-t-2 border-carbon/25 pt-3 text-sm font-medium text-carbon/80">
               {plan.features.slice(0, 4).map((f) => (
                 <li key={f}>— {f}</li>
               ))}
@@ -168,7 +168,7 @@ export default function CheckoutPage() {
                   defaultValue="4242 4242 4242 4242"
                   required
                 />
-                <span className="text-[11px] font-medium text-carbon/50">
+                <span className="text-[11px] font-medium text-carbon/80">
                   Prefilled demo value — any input works, nothing is validated or
                   stored.
                 </span>
@@ -210,7 +210,7 @@ export default function CheckoutPage() {
                 {perUser} (demo)
               </button>
 
-              <p className="text-center text-xs font-medium text-carbon/50">
+              <p className="text-center text-xs font-medium text-carbon/80">
                 Free plan?{" "}
                 <Link
                   to="/register"

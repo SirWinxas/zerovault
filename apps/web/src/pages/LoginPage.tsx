@@ -18,7 +18,7 @@ export default function LoginPage() {
         error={error}
         onSubmit={submit}
       />
-      <p className="text-sm text-carbon/70">
+      <p className="text-sm text-carbon/80">
         No account?{" "}
         <Link className="font-bold underline underline-offset-2" to="/register">
           Register
