@@ -57,4 +57,10 @@ describe("loginUser", () => {
     expect(verify).toHaveBeenCalledWith("good", "hashed(good)");
     expect(user.email).toBe("a@b.co");
   });
+
+  it("normalizes the email (trim + lowercase) before lookup", async () => {
+    const { user, login } = await setup();
+    const res = await login({ email: " A@B.CO ", authHash: "good" });
+    expect(res.token).toBe(`token-for-${user.id}`);
+  });
 });

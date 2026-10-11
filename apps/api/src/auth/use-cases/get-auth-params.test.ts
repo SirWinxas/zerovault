@@ -30,4 +30,12 @@ describe("getAuthParams", () => {
     expect((await get("x@y.co")).authSalt).toBe(first.authSalt);
     expect((await get("z@y.co")).authSalt).not.toBe(first.authSalt);
   });
+
+  it("normalizes the email for both real and decoy lookups", async () => {
+    const users = new InMemoryUserRepository();
+    await users.create({ email: "a@b.co", authHashHash: "h", authSalt: "as", encSalt: "es", kdfParams });
+    const get = makeGetAuthParams({ users, decoy: createDecoy("test-pepper") });
+    expect((await get("A@B.CO")).authSalt).toBe("as");
+    expect((await get("X@Y.co")).authSalt).toBe((await get("x@y.co")).authSalt);
+  });
 });

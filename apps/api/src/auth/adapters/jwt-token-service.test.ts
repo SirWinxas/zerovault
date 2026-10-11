@@ -33,4 +33,8 @@ describe("JwtTokenService", () => {
     const none = `${enc({ alg: "none", typ: "JWT" })}.${enc({ sub: "u" })}.`;
     await expect(service.verify(none)).rejects.toThrow();
   });
+
+  it("refuses a secret shorter than 32 characters", () => {
+    expect(() => new JwtTokenService({ secret: "too-short" })).toThrow(/at least 32/);
+  });
 });

@@ -14,7 +14,7 @@ const registerBody = {
 };
 
 function setup() {
-  const registerUser = vi.fn(async () => ({ id: "u1" }));
+  const registerUser = vi.fn(async (): Promise<void> => {});
   const loginUser = vi.fn(async () => ({ token: "t", encSalt: "es", kdfParams }));
   const getAuthParams = vi.fn(async () => ({ authSalt: "as", kdfParams }));
   const app = express();
@@ -25,12 +25,23 @@ function setup() {
 
 describe("auth router", () => {
   describe("POST /auth/register", () => {
-    it("returns 201 with the new id", async () => {
+    it("returns 201 with an empty body for a new email", async () => {
       const { app, registerUser } = setup();
       const res = await request(app).post("/auth/register").send(registerBody);
       expect(res.status).toBe(201);
-      expect(res.body).toEqual({ id: "u1" });
+      expect(res.body).toEqual({});
       expect(registerUser).toHaveBeenCalledWith(registerBody);
+    });
+
+    it("returns the identical 201 response when the email already exists (no enumeration oracle)", async () => {
+      const { app, registerUser } = setup();
+      const fresh = await request(app).post("/auth/register").send(registerBody);
+      // Even a stray domain error from the use case must not become a distinguishable status.
+      registerUser.mockRejectedValueOnce(new EmailAlreadyRegisteredError());
+      const existing = await request(app).post("/auth/register").send(registerBody);
+      expect(existing.status).toBe(201);
+      expect(existing.body).toEqual({});
+      expect(existing.text).toBe(fresh.text);
     });
 
     it("returns 400 for an invalid body", async () => {
@@ -41,12 +52,22 @@ describe("auth router", () => {
       expect(registerUser).not.toHaveBeenCalled();
     });
 
-    it("returns 409 when the email is already registered", async () => {
+    it("rejects kdf params below the iteration floor with 400", async () => {
       const { app, registerUser } = setup();
-      registerUser.mockRejectedValueOnce(new EmailAlreadyRegisteredError());
-      const res = await request(app).post("/auth/register").send(registerBody);
-      expect(res.status).toBe(409);
-      expect(res.body).toEqual({ error: "EmailAlreadyRegistered" });
+      const res = await request(app)
+        .post("/auth/register")
+        .send({ ...registerBody, kdfParams: { iterations: 1, hash: "SHA-256" } });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("ValidationError");
+      expect(registerUser).not.toHaveBeenCalled();
+    });
+
+    it("accepts kdf params at the iteration floor", async () => {
+      const { app } = setup();
+      const res = await request(app)
+        .post("/auth/register")
+        .send({ ...registerBody, kdfParams: { iterations: 600000, hash: "SHA-256" } });
+      expect(res.status).toBe(201);
     });
 
     it("logs unexpected errors server-side without leaking details", async () => {

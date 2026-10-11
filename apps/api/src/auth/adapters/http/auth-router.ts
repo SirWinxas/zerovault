@@ -15,13 +15,18 @@ export interface AuthRouterDeps {
 
 const ParamsQuerySchema = z.object({ email: z.email() });
 
+/** The single, account-independent response for every accepted registration. */
+const REGISTER_ACCEPTED = Object.freeze({});
+
 export function createAuthRouter({ registerUser, loginUser, getAuthParams }: AuthRouterDeps): Router {
   const router = Router();
 
   router.post("/register", async (req, res) => {
     const input = RegisterRequestSchema.parse(req.body);
-    const { id } = await registerUser(input);
-    res.status(201).json({ id });
+    await registerUser(input);
+    // Identical response whether or not the email already existed: no user id,
+    // no distinguishing status (account existence must stay unobservable).
+    res.status(201).json(REGISTER_ACCEPTED);
   });
 
   router.get("/params", async (req, res) => {
@@ -45,7 +50,8 @@ function handleAuthError(err: unknown, _req: Request, res: Response, _next: Next
   if (err instanceof ZodError) {
     res.status(400).json({ error: "ValidationError", details: err.issues });
   } else if (err instanceof EmailAlreadyRegisteredError) {
-    res.status(409).json({ error: "EmailAlreadyRegistered" });
+    // Defense in depth: "exists" must never surface as a distinct response.
+    res.status(201).json(REGISTER_ACCEPTED);
   } else if (err instanceof InvalidCredentialsError) {
     res.status(401).json({ error: "InvalidCredentials" });
   } else {

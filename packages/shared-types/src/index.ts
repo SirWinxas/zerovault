@@ -1,7 +1,15 @@
 import { z } from "zod";
 
+/**
+ * KDF policy shared by server and clients. The floor stops anyone (a client, or a
+ * malicious server handing out params) from weakening PBKDF2; the ceiling stops
+ * params that would turn derivation into a denial of service.
+ */
+export const KDF_MIN_ITERATIONS = 600_000;
+export const KDF_MAX_ITERATIONS = 10_000_000;
+
 export const KdfParamsSchema = z.object({
-  iterations: z.number().int().positive(),
+  iterations: z.number().int().min(KDF_MIN_ITERATIONS).max(KDF_MAX_ITERATIONS),
   hash: z.literal("SHA-256"),
 });
 export type KdfParams = z.infer<typeof KdfParamsSchema>;
@@ -59,3 +67,13 @@ export const VaultItemResponseSchema = z.object({
   iv: z.string(),
 });
 export type VaultItemResponse = z.infer<typeof VaultItemResponseSchema>;
+
+/** Plaintext shape of a vault entry; only ever exists client-side, after decryption. */
+export const VaultEntrySchema = z.object({
+  site: z.string(),
+  username: z.string(),
+  password: z.string(),
+  totp: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+export type VaultEntry = z.infer<typeof VaultEntrySchema>;

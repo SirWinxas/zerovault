@@ -1,11 +1,15 @@
 import { createHmac, randomBytes, scryptSync } from "node:crypto";
-import type { KdfParams } from "@zerovault/shared-types";
+import { KDF_MIN_ITERATIONS, type KdfParams } from "@zerovault/shared-types";
+import { normalizeEmail } from "../domain/email.js";
 
 const SALT_BYTES = 16;
 const KEY_BYTES = 64;
 
-/** Default client KDF params; decoy responses must be indistinguishable from real ones. */
-const DEFAULT_KDF_PARAMS: KdfParams = { iterations: 600000, hash: "SHA-256" };
+/**
+ * Default client KDF params (inside the shared KDF policy); decoy responses must
+ * be indistinguishable from real ones.
+ */
+const DEFAULT_KDF_PARAMS: KdfParams = { iterations: KDF_MIN_ITERATIONS, hash: "SHA-256" };
 
 export interface Decoy {
   /** Deterministic per-email base64 salt, unpredictable without the pepper. */
@@ -21,7 +25,7 @@ export function createDecoy(pepper: string): Decoy {
 
   return {
     saltFor: (email) =>
-      createHmac("sha256", pepper).update(email).digest().subarray(0, SALT_BYTES).toString("base64"),
+      createHmac("sha256", pepper).update(normalizeEmail(email)).digest().subarray(0, SALT_BYTES).toString("base64"),
     kdfParams: DEFAULT_KDF_PARAMS,
     hash: `${salt.toString("hex")}:${key.toString("hex")}`,
   };

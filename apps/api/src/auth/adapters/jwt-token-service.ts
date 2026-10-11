@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { MIN_SECRET_LENGTH, requireSecret } from "../../config/require-secret.js";
 import type { TokenService } from "../ports/token-service.js";
 
 export interface JwtTokenServiceOptions {
@@ -13,8 +14,7 @@ export class JwtTokenService implements TokenService {
   private readonly expiresIn: string;
 
   constructor({ secret, expiresIn = "1h" }: JwtTokenServiceOptions) {
-    if (!secret) throw new Error("JwtTokenService requires a non-empty secret");
-    this.secret = secret;
+    this.secret = requireSecret("JWT_SECRET", secret, MIN_SECRET_LENGTH);
     this.expiresIn = expiresIn;
   }
 

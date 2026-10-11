@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import { MIN_SECRET_LENGTH, requireSecret } from "../config/require-secret.js";
 import { createAuthRateLimiter } from "./adapters/http/rate-limit.js";
 import { createAuthRouter } from "./adapters/http/auth-router.js";
 import { createDecoy } from "./adapters/decoy.js";
@@ -12,15 +13,8 @@ import { makeRegisterUser } from "./use-cases/register-user.js";
 
 /** Composition root for the auth module. Reads env and builds real adapters. */
 export function buildAuthRouter(): Router {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET environment variable is required and must not be empty");
-  }
-
-  const pepper = process.env.AUTH_PEPPER;
-  if (!pepper) {
-    throw new Error("AUTH_PEPPER environment variable is required and must not be empty");
-  }
+  const secret = requireSecret("JWT_SECRET", process.env.JWT_SECRET, MIN_SECRET_LENGTH);
+  const pepper = requireSecret("AUTH_PEPPER", process.env.AUTH_PEPPER, MIN_SECRET_LENGTH);
   const decoy = createDecoy(pepper);
 
   // PrismaClient connects lazily on first query.

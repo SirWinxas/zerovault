@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import { MIN_SECRET_LENGTH, requireSecret } from "../config/require-secret.js";
 import { createRequireAuth } from "../auth/adapters/http/auth-middleware.js";
 import { JwtTokenService } from "../auth/adapters/jwt-token-service.js";
 import { createVaultRouter } from "./adapters/http/vault-router.js";
@@ -11,10 +12,7 @@ import { makeUpdateVaultItem } from "./use-cases/update-vault-item.js";
 
 /** Composition root for the vault module. Every route is behind JWT auth. */
 export function buildVaultRouter(): Router {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET environment variable is required and must not be empty");
-  }
+  const secret = requireSecret("JWT_SECRET", process.env.JWT_SECRET, MIN_SECRET_LENGTH);
 
   // PrismaClient connects lazily on first query.
   const prisma = new PrismaClient();

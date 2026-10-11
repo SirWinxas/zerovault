@@ -6,6 +6,10 @@ import {
   VaultItemResponseSchema,
   LoginRequestSchema,
   RegisterRequestSchema,
+  KdfParamsSchema,
+  KDF_MIN_ITERATIONS,
+  KDF_MAX_ITERATIONS,
+  VaultEntrySchema,
 } from "./index";
 
 const kdfParams = { iterations: 600000, hash: "SHA-256" as const };
@@ -43,5 +47,26 @@ describe("shared-types", () => {
   it("validates a vault item response", () => {
     expect(VaultItemResponseSchema.safeParse({ id: "1", ciphertext: "c", iv: "i" }).success).toBe(true);
     expect(VaultItemResponseSchema.safeParse({ ciphertext: "c", iv: "i" }).success).toBe(false);
+  });
+
+  it("enforces the KDF iteration floor and ceiling and pins SHA-256", () => {
+    expect(KDF_MIN_ITERATIONS).toBe(600000);
+    expect(KDF_MAX_ITERATIONS).toBe(10_000_000);
+    const ok = (iterations: number, hash = "SHA-256") => KdfParamsSchema.safeParse({ iterations, hash }).success;
+    expect(ok(KDF_MIN_ITERATIONS)).toBe(true);
+    expect(ok(KDF_MAX_ITERATIONS)).toBe(true);
+    expect(ok(1)).toBe(false);
+    expect(ok(KDF_MIN_ITERATIONS - 1)).toBe(false);
+    expect(ok(KDF_MAX_ITERATIONS + 1)).toBe(false);
+    expect(ok(600000.5)).toBe(false);
+    expect(ok(600000, "SHA-1")).toBe(false);
+  });
+
+  it("validates a decrypted vault entry", () => {
+    const entry = { site: "https://a.co", username: "u", password: "p" };
+    expect(VaultEntrySchema.safeParse(entry).success).toBe(true);
+    expect(VaultEntrySchema.safeParse({ ...entry, totp: "JBSWY3DP", tags: ["work"] }).success).toBe(true);
+    expect(VaultEntrySchema.safeParse({ site: "s", username: "u" }).success).toBe(false);
+    expect(VaultEntrySchema.safeParse({ ...entry, tags: [1] }).success).toBe(false);
   });
 });

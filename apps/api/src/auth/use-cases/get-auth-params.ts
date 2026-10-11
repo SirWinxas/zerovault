@@ -1,5 +1,6 @@
 import type { AuthParamsResponse } from "@zerovault/shared-types";
 import type { Decoy } from "../adapters/decoy.js";
+import { normalizeEmail } from "../domain/email.js";
 import type { UserRepository } from "../ports/user-repository.js";
 
 export interface GetAuthParamsDeps {
@@ -8,7 +9,8 @@ export interface GetAuthParamsDeps {
 }
 
 export function makeGetAuthParams({ users, decoy }: GetAuthParamsDeps) {
-  return async function getAuthParams(email: string): Promise<AuthParamsResponse> {
+  return async function getAuthParams(rawEmail: string): Promise<AuthParamsResponse> {
+    const email = normalizeEmail(rawEmail);
     const user = await users.findByEmail(email);
     if (user) {
       return { authSalt: user.authSalt, kdfParams: user.kdfParams };

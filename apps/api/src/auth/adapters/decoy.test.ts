@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { KdfParamsSchema } from "@zerovault/shared-types";
 import { createDecoy } from "./decoy.js";
 
 describe("createDecoy", () => {
@@ -28,5 +29,14 @@ describe("createDecoy", () => {
 
   it("builds a hash in the ScryptHasher stored format", () => {
     expect(createDecoy("test-pepper").hash).toMatch(/^[0-9a-f]{32}:[0-9a-f]{128}$/);
+  });
+
+  it("derives the same salt for case/whitespace variants of an email", () => {
+    const decoy = createDecoy("test-pepper");
+    expect(decoy.saltFor(" A@B.Co ")).toBe(decoy.saltFor("a@b.co"));
+  });
+
+  it("uses kdf params that satisfy the shared KDF policy", () => {
+    expect(KdfParamsSchema.safeParse(createDecoy("test-pepper").kdfParams).success).toBe(true);
   });
 });
