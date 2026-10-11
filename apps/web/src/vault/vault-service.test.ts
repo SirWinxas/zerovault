@@ -84,6 +84,20 @@ describe("vault-service", () => {
     expect(items).toEqual([{ id: "7", ...entry }]);
   });
 
+  it("round-trips an optional totp secret without sending it in plaintext", async () => {
+    const withTotp: VaultEntry = { ...entry, totp: "JBSWY3DPEHPK3PXP" };
+    const post = fakeApi({ post: { id: "8", ciphertext: "c", iv: "i" } });
+    await createVaultService(post.api, () => key).create(withTotp);
+    const sent = post.calls[0].body as { ciphertext: string; iv: string };
+    expect(JSON.stringify(sent)).not.toContain(withTotp.totp);
+
+    const items = await createVaultService(
+      fakeApi({ get: [{ id: "8", ...sent }] }).api,
+      () => key,
+    ).list();
+    expect(items).toEqual([{ id: "8", ...withTotp }]);
+  });
+
   it("update PUTs only { ciphertext, iv } to /vault/:id", async () => {
     const { api, calls } = fakeApi({ put: { id: "9", ciphertext: "c", iv: "i" } });
     const updated = await createVaultService(api, () => key).update("9", entry);

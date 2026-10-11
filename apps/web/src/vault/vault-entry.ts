@@ -2,6 +2,8 @@ export interface VaultEntry {
   site: string;
   username: string;
   password: string;
+  /** Optional normalized Base32 TOTP secret; lives only inside the encrypted blob. */
+  totp?: string;
 }
 
 export interface DecryptedVaultItem extends VaultEntry {

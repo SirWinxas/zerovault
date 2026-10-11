@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "../atoms/Button";
 import { TextField } from "../atoms/TextField";
 import type { VaultEntry } from "../../vault/vault-entry";
+import { isValidBase32Secret, normalizeSecret } from "../../vault/totp";
 import {
   DEFAULT_PASSWORD_OPTIONS,
   generatePassword,
@@ -27,7 +28,9 @@ export function VaultItemForm({
     site: initial.site,
     username: initial.username,
     password: initial.password,
+    totp: initial.totp ?? "",
   });
+  const [totpError, setTotpError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [genOpts, setGenOpts] = useState<PasswordOptions>(
     DEFAULT_PASSWORD_OPTIONS,
@@ -63,16 +66,23 @@ export function VaultItemForm({
   );
 
   const field = (name: keyof VaultEntry) => ({
-    value: entry[name],
+    value: entry[name] ?? "",
     onChange: (e: { target: { value: string } }) =>
       setEntry((prev) => ({ ...prev, [name]: e.target.value })),
   });
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    const { totp: totpText = "", ...base } = entry;
+    const normalized = normalizeSecret(totpText);
+    if (normalized && !isValidBase32Secret(normalized)) {
+      setTotpError("Invalid 2FA secret: use Base32 letters A-Z and digits 2-7");
+      return;
+    }
+    setTotpError(null);
     setBusy(true);
     try {
-      await onSubmit(entry);
+      await onSubmit(normalized ? { ...base, totp: normalized } : base);
     } finally {
       setBusy(false);
     }
@@ -126,6 +136,18 @@ export function VaultItemForm({
           </p>
         )}
       </div>
+      <TextField
+        label="2FA secret (TOTP)"
+        autoComplete="off"
+        spellCheck={false}
+        placeholder="Optional Base32 secret"
+        {...field("totp")}
+      />
+      {totpError && (
+        <p role="alert" className="font-semibold text-ember">
+          {totpError}
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" variant="primary" disabled={busy}>
           {submitLabel}

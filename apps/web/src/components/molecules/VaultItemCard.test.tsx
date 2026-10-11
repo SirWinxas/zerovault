@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { VaultItemCard } from "./VaultItemCard";
@@ -16,6 +16,37 @@ describe("VaultItemCard", () => {
     await user.click(screen.getByRole("button", { name: /copy password/i }));
     expect(writeText).toHaveBeenCalledWith("pw!");
     expect(await screen.findByText(/clears in/i)).toBeTruthy();
+  });
+
+  it("shows a 6-digit 2FA code and never the raw secret", async () => {
+    const secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
+    const { container } = render(
+      <VaultItemCard
+        item={{ ...item, totp: secret }}
+        onEdit={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    const codeEl = await screen.findByLabelText("2FA code");
+    await waitFor(() => expect(codeEl.textContent).toMatch(/^\d{3} \d{3}$/));
+    expect(container.innerHTML).not.toContain(secret);
+    expect(screen.getByRole("button", { name: /copy 2fa code/i })).toBeTruthy();
+  });
+
+  it("shows an invalid note for a corrupt secret", async () => {
+    render(
+      <VaultItemCard
+        item={{ ...item, totp: "!!!" }}
+        onEdit={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    expect(await screen.findByText(/invalid 2fa secret/i)).toBeTruthy();
+  });
+
+  it("renders no 2FA block without a totp", () => {
+    render(<VaultItemCard item={item} onEdit={() => {}} onDelete={() => {}} />);
+    expect(screen.queryByLabelText("2FA code")).toBeNull();
   });
 
   it("renders a decrypt-error row with Delete only", async () => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../atoms/Button";
 import {
   CopyIcon,
@@ -9,6 +9,7 @@ import {
 } from "../atoms/Icons";
 import { copyWithAutoClear } from "../../lib/clipboard";
 import type { DecryptedVaultItem } from "../../vault/vault-entry";
+import { generateTotp, totpRemainingSeconds } from "../../vault/totp";
 
 interface VaultItemCardProps {
   item: DecryptedVaultItem;
@@ -17,12 +18,50 @@ interface VaultItemCardProps {
 }
 
 const CLEAR_MS = 20_000;
+const TOTP_PERIOD_S = 30;
 const cardClass =
   "flex flex-col gap-3 rounded-[20px] border-2 border-carbon bg-paper p-4 sm:flex-row sm:items-center sm:justify-between";
 
 export function VaultItemCard({ item, onEdit, onDelete }: VaultItemCardProps) {
   const [visible, setVisible] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState(totpRemainingSeconds());
+  const [totpInvalid, setTotpInvalid] = useState(false);
+  const totpSecret = item.decryptError ? "" : (item.totp ?? "");
+
+  useEffect(() => {
+    if (!totpSecret) return;
+    let cancelled = false;
+    let lastCounter = -1;
+
+    function tick() {
+      const now = Date.now();
+      setRemaining(totpRemainingSeconds(now));
+      const counter = Math.floor(now / 1000 / TOTP_PERIOD_S);
+      if (counter === lastCounter) return;
+      lastCounter = counter;
+      generateTotp(totpSecret, { nowMs: now }).then(
+        (c) => {
+          if (cancelled) return;
+          setCode(c);
+          setTotpInvalid(false);
+        },
+        () => {
+          if (cancelled) return;
+          setCode(null);
+          setTotpInvalid(true);
+        },
+      );
+    }
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [totpSecret]);
 
   if (item.decryptError) {
     return (
@@ -67,6 +106,35 @@ export function VaultItemCard({ item, onEdit, onDelete }: VaultItemCardProps) {
           <p className="truncate font-mono text-sm text-carbon/80">
             {visible ? item.password : "••••••••"}
           </p>
+          {totpSecret && (
+            <div className="mt-1 flex items-center gap-2 text-sm">
+              {totpInvalid ? (
+                <p role="status" className="font-semibold text-ember">
+                  Invalid 2FA secret
+                </p>
+              ) : (
+                <>
+                  <span
+                    aria-label="2FA code"
+                    className="font-mono text-base font-bold tracking-wider"
+                  >
+                    {code ? `${code.slice(0, 3)} ${code.slice(3)}` : "--- ---"}
+                  </span>
+                  <span className="text-xs text-carbon/80">{remaining}s</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Copy 2FA code"
+                    disabled={!code}
+                    onClick={() => code && copy(code, "2FA code copied")}
+                  >
+                    <CopyIcon />
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
           {hint && (
             <p
               role="status"
