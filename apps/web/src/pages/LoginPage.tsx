@@ -7,7 +7,10 @@ export default function LoginPage() {
   const { auth } = useSession();
   const { pending, error, submit } = useAuthSubmit(auth.login);
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-900 p-4 text-white">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-5 p-4">
+      <h1 className="font-display uppercase text-5xl leading-[0.8] tracking-tight text-center">
+        ZeroVault
+      </h1>
       <AuthForm
         title="Log in"
         submitLabel="Log in"
@@ -15,9 +18,9 @@ export default function LoginPage() {
         error={error}
         onSubmit={submit}
       />
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-carbon/70">
         No account?{" "}
-        <Link className="text-indigo-400 underline" to="/register">
+        <Link className="font-bold underline underline-offset-2" to="/register">
           Register
         </Link>
       </p>

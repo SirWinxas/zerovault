@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "../session/SessionContext";
 import { Button } from "../components/atoms/Button";
+import { LockIcon } from "../components/atoms/Icons";
 import { VaultItemForm } from "../components/molecules/VaultItemForm";
 import { VaultList } from "../components/organisms/VaultList";
 import { createVaultService } from "../vault/vault-service";
@@ -56,26 +57,40 @@ export default function VaultPage() {
     );
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-4 bg-slate-900 p-4 text-white">
+    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-4 p-4">
       <header className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold">Vault</h1>
-          <p className="truncate text-sm text-slate-300">
+          <h1 className="font-display uppercase text-5xl leading-[0.8]">
+            Vault
+          </h1>
+          <p className="mt-2 truncate text-sm text-carbon/70">
             Signed in as {session?.email}
           </p>
         </div>
-        <Button onClick={lock}>Lock</Button>
+        <Button
+          variant="secondary"
+          size="icon"
+          aria-label="Lock vault"
+          onClick={lock}
+        >
+          <LockIcon />
+        </Button>
       </header>
 
       {error && (
-        <p role="alert" className="rounded-md bg-red-900/60 p-3 text-red-200">
+        <p
+          role="alert"
+          className="rounded-[16px] border-2 border-carbon bg-ember px-4 py-3 font-semibold text-paper"
+        >
           {error}
         </p>
       )}
 
       {editing.kind === "none" ? (
         <div>
-          <Button onClick={() => setEditing({ kind: "new" })}>New item</Button>
+          <Button variant="primary" onClick={() => setEditing({ kind: "new" })}>
+            New item
+          </Button>
         </div>
       ) : (
         <VaultItemForm
@@ -87,7 +102,7 @@ export default function VaultPage() {
       )}
 
       {loading ? (
-        <p className="text-slate-400">Loading...</p>
+        <p className="text-carbon/60">Loading...</p>
       ) : (
         <VaultList
           items={items}

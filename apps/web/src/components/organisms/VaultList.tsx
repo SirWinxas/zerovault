@@ -1,3 +1,4 @@
+import { LockIcon } from "../atoms/Icons";
 import { VaultItemCard } from "../molecules/VaultItemCard";
 import type { DecryptedVaultItem } from "../../vault/vault-entry";
 
@@ -10,7 +11,14 @@ interface VaultListProps {
 export function VaultList({ items, onEdit, onDelete }: VaultListProps) {
   if (items.length === 0) {
     return (
-      <p className="text-slate-400">Your vault is empty. Add your first item.</p>
+      <div className="flex flex-col items-center gap-3 rounded-[20px] border-2 border-dashed border-carbon p-8 text-center">
+        <LockIcon size={40} />
+        <p className="font-bold">Nothing here yet.</p>
+        <p className="text-sm text-carbon/70">
+          Add your first credential and it is encrypted before it leaves this
+          device.
+        </p>
+      </div>
     );
   }
   return (

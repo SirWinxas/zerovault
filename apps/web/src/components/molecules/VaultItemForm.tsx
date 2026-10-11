@@ -54,6 +54,7 @@ export function VaultItemForm({
     <label className="flex items-center gap-1">
       <input
         type="checkbox"
+        className="accent-violet h-4 w-4"
         checked={genOpts[name]}
         onChange={(e) => setGenOpts((o) => ({ ...o, [name]: e.target.checked }))}
       />
@@ -80,7 +81,7 @@ export function VaultItemForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 rounded-lg border border-slate-700 bg-slate-800/60 p-4"
+      className="flex flex-col gap-3 rounded-[20px] border-2 border-carbon bg-paper p-4"
     >
       <TextField label="Site" required {...field("site")} />
       <TextField label="Username" required {...field("username")} />
@@ -91,7 +92,7 @@ export function VaultItemForm({
         required
         {...field("password")}
       />
-      <div className="flex flex-col gap-2 rounded-md border border-slate-700 p-3 text-sm text-slate-300">
+      <div className="flex flex-col gap-2 rounded-[16px] border-2 border-carbon p-3 text-sm">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <label className="flex items-center gap-1">
             Length
@@ -101,7 +102,7 @@ export function VaultItemForm({
               max={128}
               value={lengthText}
               onChange={(e) => setLengthText(e.target.value)}
-              className="w-16 rounded-md border border-slate-600 bg-slate-800 px-2 py-1 text-white"
+              className="w-16 rounded-[10px] border-2 border-carbon bg-paper px-2 py-1"
             />
           </label>
           {toggle("lowercase", "a-z")}
@@ -112,26 +113,27 @@ export function VaultItemForm({
         <div>
           <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={handleGenerate}
-            className="bg-slate-600 hover:bg-slate-500"
           >
             Generate
           </Button>
         </div>
         {genError && (
-          <p role="alert" className="text-red-300">
+          <p role="alert" className="font-semibold text-ember">
             {genError}
           </p>
         )}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" variant="primary" disabled={busy}>
           {submitLabel}
         </Button>
         <Button
           type="button"
+          variant="secondary"
           onClick={onCancel}
-          className="bg-slate-600 hover:bg-slate-500"
         >
           Cancel
         </Button>

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "../atoms/Button";
+import { LockIcon } from "../atoms/Icons";
 import { TextField } from "../atoms/TextField";
 
 interface AuthFormProps {
@@ -29,9 +30,9 @@ export function AuthForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full max-w-sm flex-col gap-4 rounded-lg bg-slate-800/60 p-6 shadow-lg"
+      className="flex w-full max-w-sm flex-col gap-4 rounded-[36px] border-2 border-carbon bg-paper p-6"
     >
-      <h1 className="text-2xl font-bold">{title}</h1>
+      <h2 className="font-display uppercase text-4xl leading-none">{title}</h2>
       <TextField
         label="Email"
         type="email"
@@ -49,13 +50,25 @@ export function AuthForm({
         onChange={(e) => setPassword(e.target.value)}
       />
       {error && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm font-semibold text-ember">
           {error}
         </p>
       )}
-      <Button type="submit" disabled={pending}>
+      <Button
+        type="submit"
+        variant="primary"
+        className="w-full"
+        disabled={pending}
+      >
         {pending ? "Working…" : submitLabel}
       </Button>
+      <div className="flex items-center gap-2.5 rounded-[20px] border-2 border-carbon bg-lavender px-3.5 py-3 text-[13px] font-medium">
+        <LockIcon />
+        <span>
+          Your master password never leaves your browser. Lose it and the vault
+          is gone.
+        </span>
+      </div>
     </form>
   );
 }

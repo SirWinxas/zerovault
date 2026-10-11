@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-carbon: #000000;
-  --color-paper: #ffffff;
-  --color-sky: #dceeff;
-  --color-concrete: #cccccc;
-  --color-mist: #e9e9e9;
-  --color-blue: #4da2ff;
-  --color-mint: #55db9c;
-  --color-lavender: #e9ccff;
-  --color-ember: #fb4903;
-  --color-sunburst: #ffd731;
-  --color-violet: #5c4ade;
+  /* Palette: Cool Gray + Indigo (sober). Neutral base, one disciplined indigo accent;
+     red reserved for destructive actions and errors. */
+  --color-carbon: #1a1f2b; /* ink: borders, text, primary button */
+  --color-paper: #ffffff; /* surface */
+  --color-sky: #edeff4; /* page background + icon tiles */
+  --color-concrete: #cfd3dc; /* neutral gray */
+  --color-mist: #e9ebf1; /* section background */
+  --color-blue: #4c48d6; /* accent: input focus ring */
+  --color-mint: #3f9b74; /* success */
+  --color-lavender: #e7e8fb; /* accent-soft: notes, previews, summaries */
+  --color-ember: #b4232a; /* danger: errors, destructive actions */
+  --color-sunburst: #cdd0f4; /* highlight: featured plan, demo notice (dark text) */
+  --color-violet: #4c48d6; /* accent: button focus ring, checkbox */
 
   --font-display: Impact, "Haettenschweiler", "Arial Narrow Bold", "Arial Black", sans-serif;
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
