@@ -87,8 +87,22 @@ SHA-256) is a documented FUTURE extension, not in F2.
 
 - Implemented via one delegated writer (sonnet), TDD strict (RED = missing module, 21 totp tests GREEN).
 - Writer fix: `decodeBase32` returns `Uint8Array<ArrayBuffer>` so `crypto.subtle.importKey` accepts it.
-- Status: all source changes implemented and verified; NOT yet committed (awaiting RDD review + commit).
+- Status: F2 committed+pushed as `e2bb10e`. Follow-up (review findings) implemented, pending its own commit.
 - Branch: `main` (repo convention: main-only history). F1 committed+pushed as `84dfc16`.
+
+## Follow-up — RDD review findings on e2bb10e (resolved)
+
+- WARNING R3-validator-accepts-unusable-key — FIXED: `isValidBase32Secret` now also requires
+  `decodeBase32(secret).length > 0`, so a too-short secret (e.g. 1 char) is rejected at the form.
+  RED test added (`isValidBase32Secret("A")` false, `"ME"` true).
+- WARNING R3-form-validation-untested — FIXED: new `VaultItemForm.test.tsx` with 4 tests (normalized
+  secret submitted; invalid secret shows alert + blocks submit; empty field omits `totp`; clearing an
+  initial `totp` omits it).
+- SUGGESTION R3-card-stale-state — FIXED: the card effect resets `code`/`totpInvalid` at start so a
+  stale code is not shown when the secret changes on a mounted card.
+- Parent catch: the writer recreated `VaultItemForm.test.tsx` and dropped 2 pre-existing tests
+  (form render/submit + password-generator length); both RESTORED alongside the 4 new TOTP tests.
+- Checks after follow-up: `npm run test -w apps/web` 108 passed; typecheck clean; build OK.
 - Context (codegraph): `vault-service.seal` = `encrypt(key, JSON.stringify(entry))`; `list` does
   `JSON.parse(decrypt(...)) as VaultEntry` → adding optional fields to `VaultEntry` is ZK and
   backward compatible. `crypto.subtle` HMAC-SHA1 is available (same env as encrypt/decrypt tests).

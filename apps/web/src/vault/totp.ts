@@ -20,7 +20,8 @@ function stripPadding(normalized: string): string {
 
 export function isValidBase32Secret(secret: string): boolean {
   const body = stripPadding(normalizeSecret(secret));
-  return body.length > 0 && /^[A-Z2-7]+$/.test(body);
+  if (body.length === 0 || !/^[A-Z2-7]+$/.test(body)) return false;
+  return decodeBase32(secret).length > 0;
 }
 
 export function decodeBase32(secret: string): Uint8Array<ArrayBuffer> {

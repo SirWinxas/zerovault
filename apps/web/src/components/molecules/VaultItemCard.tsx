@@ -34,6 +34,8 @@ export function VaultItemCard({ item, onEdit, onDelete }: VaultItemCardProps) {
     if (!totpSecret) return;
     let cancelled = false;
     let lastCounter = -1;
+    setCode(null);
+    setTotpInvalid(false);
 
     function tick() {
       const now = Date.now();

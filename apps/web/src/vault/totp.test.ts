@@ -50,6 +50,10 @@ describe("isValidBase32Secret", () => {
     expect(isValidBase32Secret("JBSWY3DP")).toBe(true);
     expect(isValidBase32Secret("mzxw 6ytb")).toBe(true);
   });
+  it("rejects secrets too short to decode to any byte, accepts the minimum", () => {
+    expect(isValidBase32Secret("A")).toBe(false);
+    expect(isValidBase32Secret("ME")).toBe(true);
+  });
   it("rejects invalid secrets", () => {
     expect(isValidBase32Secret("")).toBe(false);
     expect(isValidBase32Secret("abc!@#")).toBe(false);
