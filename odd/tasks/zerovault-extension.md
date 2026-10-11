@@ -37,7 +37,7 @@ ever sees ciphertext), shows the credentials for the active site, and autofills 
       `<all_urls>`, `permissions: ["storage","activeTab","scripting"]`, `host_permissions` for the API),
       a React popup shell, background + content stubs. `npm run build -w apps/extension` produces a
       loadable `dist/` with a valid `manifest.json`. A short README on loading unpacked.
-- [ ] T2 — Slice 2 (popup auth + vault): popup login (email + master password) → derive authHash,
+- [x] T2 — Slice 2 (popup auth + vault) DONE: popup login (email + master password) → derive authHash,
       POST /auth/login, derive encryptionKey, GET /vault, decrypt items. A pure `origin`/site-matching
       helper (map a vault item's `site` to a hostname and match the active tab) with TDD. List the
       active site's credentials with copy username/password (auto-clear like the web app). Lock button.
@@ -66,9 +66,25 @@ ever sees ciphertext), shows the credentials for the active site, and autofills 
 
 - [x] `npm run build -w apps/extension` — Slice 1: builds; `dist/` is a valid MV3 extension (parent spot-check: built)
 - [x] `npm run typecheck -w apps/extension` — clean
-- [ ] `npm run test -w apps/extension` — no tests yet (pure-logic slices T2/T3 add them)
-- [ ] Manual: load unpacked in Chrome (user)
+- [x] `npm run test -w apps/extension` — Slice 2: 8 match tests pass (parent spot-check: 8 passed)
+- [ ] Manual: load unpacked in Chrome (user) — login flow not yet exercised against the live API
 - [x] Sanity: `npm run build -w apps/web` still succeeds (web not broken)
+
+## Slice 2 notes (popup auth + vault)
+
+- Session lives ONLY in the background service worker (`{ email, token, key, items }`); the AES key is
+  non-extractable and never persisted — an MV3 worker restart drops it and requires re-login (intentional).
+- Messaging (types in `src/lib/messages.ts`): LOGIN / STATE / ITEMS / LOCK; background ignores messages
+  whose `sender.id` is not this extension. Login errors are generic (never echo secrets).
+- Popup: login form when locked; when unlocked, lists the active tab's credentials ("This site" first via
+  `matchesTab`) then the rest; passwords masked + copy-only with a "copied" hint; Lock button.
+- `src/vault/match.ts` (pure, 8 TDD tests): `siteHostname` normalizes scheme/path/port/www + rejects
+  non-http(s); `matchesTab` = equal host or subdomain on a dot boundary.
+- host_permissions tightened to `https://zerovaultweb-production.up.railway.app/*` + `http://localhost:3000/*`
+  (resolves the Slice-1 wildcard-host finding). API base from `VITE_API_URL`, default prod; dev build needs
+  `VITE_API_URL=http://localhost:3000`.
+- Status: Slice 2 implemented + verified (build/typecheck/tests); runtime login NOT yet tested in Chrome.
+  NOT yet committed (awaiting RDD review + commit).
 
 ## Progress / notes
 

@@ -11,5 +11,8 @@ export default defineManifest({
     { matches: ["<all_urls>"], js: ["src/content.ts"], run_at: "document_idle" },
   ],
   permissions: ["storage", "activeTab", "scripting"],
-  host_permissions: ["https://*.up.railway.app/*", "http://localhost:*/*"],
+  host_permissions: [
+    "https://zerovaultweb-production.up.railway.app/*",
+    "http://localhost:3000/*",
+  ],
 });
