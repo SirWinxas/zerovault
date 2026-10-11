@@ -1,12 +1,21 @@
 import { StrictMode, useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
-import type { ItemsResponse, LoginResult, Message, StateResponse } from "./lib/messages";
+import { copyWithAutoClear } from "./lib/clipboard";
+import type { ItemsResponse, LockResponse, LoginResult, Message, StateResponse } from "./lib/messages";
 import type { DecryptedItem } from "./vault/entry";
 import { matchesTab, siteHostname } from "./vault/match";
 
-function send<T>(msg: Message): Promise<T> {
-  return chrome.runtime.sendMessage(msg) as Promise<T>;
+const GENERIC_ERROR = "Something went wrong, try again.";
+
+/** Never rejects: a failed send or an empty response resolves to `null`. */
+async function send<T>(msg: Message): Promise<T | null> {
+  try {
+    const res = (await chrome.runtime.sendMessage(msg)) as T | undefined;
+    return res ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function LoginForm({ onDone }: { onDone: () => void }) {
@@ -22,7 +31,8 @@ function LoginForm({ onDone }: { onDone: () => void }) {
     const res = await send<LoginResult>({ type: "LOGIN", email, masterPassword: master });
     setMaster("");
     setBusy(false);
-    if (res.ok) onDone();
+    if (!res) setError(GENERIC_ERROR);
+    else if (res.ok) onDone();
     else setError(res.error);
   }
 
@@ -41,8 +51,12 @@ function LoginForm({ onDone }: { onDone: () => void }) {
 function Row({ item }: { item: DecryptedItem }) {
   const [hint, setHint] = useState("");
   async function copy(label: string, value: string) {
-    await navigator.clipboard.writeText(value);
-    setHint(`${label} copied`);
+    try {
+      await copyWithAutoClear(value);
+      setHint(`${label} copied`);
+    } catch {
+      setHint("Copy failed");
+    }
     setTimeout(() => setHint(""), 1500);
   }
   return (
@@ -52,7 +66,7 @@ function Row({ item }: { item: DecryptedItem }) {
       <div style={{ display: "flex", gap: 6, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
         <button type="button" onClick={() => copy("Username", item.username)}>Copy username</button>
         <button type="button" onClick={() => copy("Password", item.password)}>Copy password</button>
-        <span aria-live="polite" style={{ fontSize: 11, color: "#2e7d32" }}>{hint}</span>
+        <span aria-live="polite" style={{ fontSize: 11, color: hint === "Copy failed" ? "#b00020" : "#2e7d32" }}>{hint}</span>
       </div>
     </li>
   );
@@ -74,27 +88,40 @@ function VaultList({ onLock }: { onLock: () => void }) {
   const [items, setItems] = useState<DecryptedItem[] | null>(null);
   const [tabUrl, setTabUrl] = useState("");
 
+  const [error, setError] = useState("");
+
   useEffect(() => {
     void (async () => {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      setTabUrl(tab?.url ?? "");
+      let url = "";
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        url = tab?.url ?? "";
+      } catch {
+        // No tab info: everything is listed under "All items".
+      }
+      setTabUrl(url);
       const res = await send<ItemsResponse>({ type: "ITEMS" });
-      if (res.locked) onLock();
+      if (!res) setError(GENERIC_ERROR);
+      else if (res.locked) onLock();
       else setItems(res.items);
     })();
   }, [onLock]);
 
   async function lock() {
-    await send({ type: "LOCK" });
-    onLock();
+    const res = await send<LockResponse>({ type: "LOCK" });
+    if (!res) setError(GENERIC_ERROR);
+    else onLock();
   }
 
-  if (!items) return <p>Loading...</p>;
+  if (!items) {
+    return error ? <p role="alert" style={{ color: "#b00020", fontSize: 12 }}>{error}</p> : <p>Loading...</p>;
+  }
   const here = items.filter((i) => matchesTab(i.site, tabUrl));
   const rest = items.filter((i) => !here.includes(i));
   return (
     <div>
       <button type="button" onClick={lock}>Lock</button>
+      {error && <p role="alert" style={{ color: "#b00020", margin: "4px 0 0", fontSize: 12 }}>{error}</p>}
       <Group title="This site" items={here} />
       <Group title={here.length ? "Other" : "All items"} items={rest} />
       {items.length === 0 && <p style={{ fontSize: 12 }}>Your vault is empty.</p>}
@@ -106,7 +133,7 @@ function Popup() {
   const [unlocked, setUnlocked] = useState<boolean | null>(null);
   const onLock = useCallback(() => setUnlocked(false), []);
   useEffect(() => {
-    void send<StateResponse>({ type: "STATE" }).then((s) => setUnlocked(s.unlocked));
+    void send<StateResponse>({ type: "STATE" }).then((s) => setUnlocked(s ? s.unlocked : false));
   }, []);
 
   return (

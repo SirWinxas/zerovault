@@ -83,8 +83,24 @@ ever sees ciphertext), shows the credentials for the active site, and autofills 
 - host_permissions tightened to `https://zerovaultweb-production.up.railway.app/*` + `http://localhost:3000/*`
   (resolves the Slice-1 wildcard-host finding). API base from `VITE_API_URL`, default prod; dev build needs
   `VITE_API_URL=http://localhost:3000`.
-- Status: Slice 2 implemented + verified (build/typecheck/tests); runtime login NOT yet tested in Chrome.
-  NOT yet committed (awaiting RDD review + commit).
+- Status: Slice 2 committed+pushed as `593ec20`. Follow-up (review findings) implemented, pending commit.
+
+### Slice 2 follow-up — RDD review findings on 593ec20 (resolved)
+
+- WARNING popup `send()` unhandled — FIXED: `send()` catches a rejection / undefined response and the
+  login/items/lock paths show "Something went wrong, try again."; STATE failure falls back to login;
+  `chrome.tabs.query` wrapped in try/catch.
+- WARNING failed login wiped the session — FIXED: login logic extracted to `src/background/session.ts`
+  (`createSessionManager`, deps-injectable api + crypto); `login` assigns the session only on success and
+  leaves an existing session untouched on failure; a `loginInFlight` guard rejects concurrent logins.
+  `background.ts` is now a thin wrapper keeping the `sender.id` gate + LOGIN/STATE/ITEMS/LOCK contract.
+- WARNING copy had no auto-clear — FIXED: `src/lib/clipboard.ts` mirrors the web `copyWithAutoClear`
+  (clears after 20s); popup copy uses it and shows "Copy failed" on rejection.
+- SUGGESTION background untested — DONE: `src/background/session.test.ts` (6 tests, real `@zerovault/crypto`
+  at 1 PBKDF2 iteration + mocked API) covers decrypt-into-items, undecryptable-skip, locked/unlocked,
+  lock(), failed-login-keeps-session, and the concurrency guard. Suite now 14 tests.
+- Known MV3 caveat: the 20s clipboard clear runs on a popup `setTimeout`; if the popup is closed first,
+  Chrome kills the timer and the clipboard is not cleared. A background/offscreen timer would fix it — deferred.
 
 ## Progress / notes
 
