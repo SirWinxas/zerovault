@@ -3,9 +3,8 @@ import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import "./popup.css";
 import { copyWithAutoClear } from "./lib/clipboard";
-import type { FillMessage, FillResponse, ItemsResponse, LockResponse, LoginResult, Message, StateResponse } from "./lib/messages";
-import type { DecryptedItem } from "./vault/entry";
-import { matchesTab, siteHostname } from "./vault/match";
+import type { CopyResponse, FillResult, ItemLabel, ItemsResponse, LockResponse, LoginResult, Message, StateResponse } from "./lib/messages";
+import { shouldFill, siteHostname } from "./vault/match";
 
 const GENERIC_ERROR = "Something went wrong, try again.";
 
@@ -49,7 +48,7 @@ function LoginForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-function Row({ item, tabId }: { item: DecryptedItem; tabId?: number }) {
+function Row({ item, tabId }: { item: ItemLabel; tabId?: number }) {
   const [hint, setHint] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // No state updates after unmount: clear any pending hint timer.
@@ -59,24 +58,19 @@ function Row({ item, tabId }: { item: DecryptedItem; tabId?: number }) {
     setHint(text);
     timer.current = setTimeout(() => setHint(""), ms);
   }
-  async function copy(label: string, value: string) {
+  async function copy(label: string, field: "username" | "password") {
     try {
-      await copyWithAutoClear(value);
+      const res = await send<CopyResponse>({ type: "COPY", id: item.id, field });
+      if (!res || !("value" in res)) throw new Error("copy");
+      await copyWithAutoClear(res.value);
       flash(`${label} copied`, 1500);
     } catch {
       flash("Copy failed", 1500);
     }
   }
   async function fill() {
-    let msg = GENERIC_ERROR;
-    try {
-      const m: FillMessage = { type: "FILL", site: item.site, username: item.username, password: item.password };
-      const res = (await chrome.tabs.sendMessage(tabId!, m)) as FillResponse | undefined;
-      if (res) msg = res.filled ? "Filled" : "No login form found";
-    } catch {
-      // Content script unreachable (e.g. restricted page): show the generic hint.
-    }
-    flash(msg, 2000);
+    const res = await send<FillResult>({ type: "FILL", id: item.id, tabId: tabId! });
+    flash(res ? (res.filled ? "Filled" : "No login form found") : GENERIC_ERROR, 2000);
   }
   const bad = hint === "Copy failed" || hint === GENERIC_ERROR || hint === "No login form found";
   return (
@@ -85,15 +79,15 @@ function Row({ item, tabId }: { item: DecryptedItem; tabId?: number }) {
       <div className="zv-user">{item.username} · ••••••••</div>
       <div className="zv-actions">
         {tabId !== undefined && <button type="button" onClick={fill}>Fill</button>}
-        <button type="button" onClick={() => copy("Username", item.username)}>Copy username</button>
-        <button type="button" onClick={() => copy("Password", item.password)}>Copy password</button>
+        <button type="button" onClick={() => copy("Username", "username")}>Copy username</button>
+        <button type="button" onClick={() => copy("Password", "password")}>Copy password</button>
         <span aria-live="polite" className={bad ? "zv-hint zv-bad" : "zv-hint"}>{hint}</span>
       </div>
     </li>
   );
 }
 
-function Group({ title, items, tabId }: { title: string; items: DecryptedItem[]; tabId?: number }) {
+function Group({ title, items, tabId }: { title: string; items: ItemLabel[]; tabId?: number }) {
   if (items.length === 0) return null;
   return (
     <section>
@@ -106,7 +100,7 @@ function Group({ title, items, tabId }: { title: string; items: DecryptedItem[];
 }
 
 function VaultList({ onLock }: { onLock: () => void }) {
-  const [items, setItems] = useState<DecryptedItem[] | null>(null);
+  const [items, setItems] = useState<ItemLabel[] | null>(null);
   const [tabUrl, setTabUrl] = useState("");
   const [tabId, setTabId] = useState<number | undefined>();
 
@@ -139,7 +133,7 @@ function VaultList({ onLock }: { onLock: () => void }) {
   if (!items) {
     return error ? <p role="alert" className="zv-error">{error}</p> : <p className="zv-empty">Loading...</p>;
   }
-  const here = items.filter((i) => matchesTab(i.site, tabUrl));
+  const here = items.filter((i) => shouldFill(i.site, tabUrl));
   const rest = items.filter((i) => !here.includes(i));
   return (
     <div>

@@ -48,12 +48,18 @@ unobservable; autofill never leaks a credential to the wrong origin.
       min 32 chars fail-fast; `trust proxy` (env `TRUST_PROXY_HOPS`, default 1 in production); Helmet;
       CORS fail-closed in production (require `WEB_ORIGIN`); email normalization; app-level JSON/404
       error handler; `VaultEntrySchema` (zod) added to `@zerovault/shared-types` for T2/T3.
-- [ ] T2 — WU-B web: client-side KDF policy check in `auth-service`; register mode gets confirm-password
+- [x] T2 — WU-B web DONE (144 web tests; `auth/kdf-policy.ts` assertKdfPolicy before every derive;
+      register mode: confirm field + `isWeak` block + `new-password`; generic register-failure copy;
+      clipboard single timer; `VaultEntrySchema.safeParse` → decryptError; 401 → lock; CSP + headers in
+      `vercel.json`, only external origin = the Railway API): client-side KDF policy check in `auth-service`; register mode gets confirm-password
       + weak-password block (reuse `isWeak`) + `autoComplete="new-password"`; generic register-failure
       message; clipboard single-timer fix (`clearTimeout` on each copy); `JSON.parse` → `VaultEntrySchema`
       safeParse (bad blob → `decryptError`, never a crash); 401 → lock + redirect; CSP + security headers
       in `vercel.json`.
-- [ ] T3 — WU-C extension: `tldts`-based `shouldFill` (+ https/port rules) with lookalike/public-suffix
+- [x] T3 — WU-C extension DONE (43 ext tests; `tldts` public-suffix `shouldFill` + https/loopback/port/IP
+      rules; `ITEMS` → labels only; background `FILL{id,tabId}`/`COPY{id,field}` resolve the single credential
+      against the real `tab.url`; visible/same-form field check; `VaultEntrySchema.safeParse`; client KDF
+      policy): `tldts`-based `shouldFill` (+ https/port rules) with lookalike/public-suffix
       tests; `ITEMS` labels-only; background `FILL`/`COPY` by id with origin check on real `tab.url`;
       content script requires visible/enabled/non-readonly fields (prefer inside a `<form>`); `JSON.parse`
       → `VaultEntrySchema`; client-side KDF policy check in `session.ts`.

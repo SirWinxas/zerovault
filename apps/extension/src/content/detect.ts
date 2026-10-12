@@ -4,6 +4,17 @@ export interface FieldInfo {
   id: string;
   autocomplete: string;
   placeholder: string;
+  /** Rendered and not hidden. Absent = assumed visible (pure-heuristic callers). */
+  visible?: boolean;
+  /** Not disabled and not read-only. Absent = assumed enabled. */
+  enabled?: boolean;
+  /** Identity of the owning form (null/undefined = no form). */
+  formId?: number | null;
+}
+
+/** True when an input can legitimately receive an autofilled value. */
+export function isFillableField(f: FieldInfo): boolean {
+  return f.type.toLowerCase() !== "hidden" && f.visible !== false && f.enabled !== false;
 }
 
 const HINT = /user|email|login/i;
@@ -29,7 +40,8 @@ export function pickLoginFields(
     (f) => TEXT_LIKE.has(f.type.toLowerCase()),
   ];
   for (const pred of tiers) {
-    const usernameIndex = nearest(fields, passwordIndex, pred);
+    const sameForm = (f: FieldInfo) => (f.formId ?? null) === (fields[passwordIndex].formId ?? null);
+    const usernameIndex = nearest(fields, passwordIndex, (f) => sameForm(f) && pred(f));
     if (usernameIndex >= 0) return { usernameIndex, passwordIndex };
   }
   return null;

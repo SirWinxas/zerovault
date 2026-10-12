@@ -13,7 +13,8 @@
     "@zerovault/crypto": "^0.0.0",
     "@zerovault/shared-types": "*",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tldts": "^6.1.86"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^3.0.0",

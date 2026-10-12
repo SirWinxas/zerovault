@@ -1,4 +1,4 @@
-import { pickLoginFields } from "./content/detect";
+import { isFillableField, pickLoginFields } from "./content/detect";
 import type { FieldInfo } from "./content/detect";
 import { shouldFill } from "./vault/match";
 import type { FillMessage, FillResponse } from "./lib/messages";
@@ -13,14 +13,28 @@ function setValue(input: HTMLInputElement, value: string): void {
 }
 
 function fill(username: string, password: string): boolean {
-  const inputs = Array.from(document.querySelectorAll("input"));
-  const infos: FieldInfo[] = inputs.map((i) => ({
-    type: i.type,
-    name: i.name,
-    id: i.id,
-    autocomplete: i.autocomplete,
-    placeholder: i.placeholder,
-  }));
+  const forms = new Map<HTMLFormElement, number>();
+  const infoFor = (i: HTMLInputElement): FieldInfo => {
+    let formId: number | null = null;
+    if (i.form) {
+      if (!forms.has(i.form)) forms.set(i.form, forms.size);
+      formId = forms.get(i.form) ?? null;
+    }
+    const rect = i.getBoundingClientRect();
+    return {
+      type: i.type,
+      name: i.name,
+      id: i.id,
+      autocomplete: i.autocomplete,
+      placeholder: i.placeholder,
+      visible: i.offsetParent !== null && rect.width > 0 && rect.height > 0,
+      enabled: !i.disabled && !i.readOnly,
+      formId,
+    };
+  };
+  // Only visible, enabled inputs are candidates; detect.ts stays pure.
+  const inputs = Array.from(document.querySelectorAll("input")).filter((i) => isFillableField(infoFor(i)));
+  const infos: FieldInfo[] = inputs.map(infoFor);
   const picked = pickLoginFields(infos);
   if (!picked) return false;
   setValue(inputs[picked.usernameIndex], username);

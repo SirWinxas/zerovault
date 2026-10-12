@@ -1,3 +1,5 @@
+import { getDomain } from "tldts";
+
 const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
 
 /** Normalize a stored site ("GitHub.com", "https://x.com/a") to a lower-case hostname, or "". */
@@ -24,15 +26,49 @@ export function matchesTab(itemSite: string, tabUrl: string): boolean {
   return item === tab || tab.endsWith(`.${item}`) || item.endsWith(`.${tab}`);
 }
 
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+function withScheme(site: string): string {
+  const raw = (site ?? "").trim();
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
+function isIp(host: string): boolean {
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(":");
+}
+
 /**
- * Gate for autofill. Stricter than `matchesTab`: fill only when the page host is
- * the credential's host or a SUBDOMAIN of it — never the reverse (a subdomain-scoped
- * credential must not fill on the broader parent domain). Note: without a public-suffix
- * list this still treats registrable boundaries by dot only (documented limitation).
+ * Gate for autofill (stricter than `matchesTab`). Fill only when:
+ * - the page is https (http only on loopback hosts);
+ * - the page host equals the credential host, or is a subdomain of it AND the
+ *   credential host is a registrable domain or deeper (never a public suffix such as
+ *   `github.io`, `vercel.app`, `co.uk`; private suffixes included);
+ * - IP hosts match exactly only;
+ * - when the credential specifies a port, the page port is identical.
+ * A credential scoped to a subdomain never fills on its parent.
  */
 export function shouldFill(credentialSite: string, pageUrl: string): boolean {
   const cred = siteHostname(credentialSite);
   const page = siteHostname(pageUrl);
   if (!cred || !page) return false;
-  return page === cred || page.endsWith(`.${cred}`);
+
+  let pageU: URL;
+  try {
+    pageU = new URL(pageUrl);
+  } catch {
+    return false;
+  }
+  if (pageU.protocol !== "https:" && !(pageU.protocol === "http:" && LOOPBACK.has(pageU.hostname))) return false;
+
+  let credPort = "";
+  try {
+    credPort = new URL(withScheme(credentialSite)).port;
+  } catch {
+    return false;
+  }
+  if (credPort && credPort !== pageU.port) return false;
+
+  if (page === cred) return true;
+  if (isIp(cred) || isIp(page)) return false;
+  return page.endsWith(`.${cred}`) && getDomain(cred, { allowPrivateDomains: true }) !== null;
 }

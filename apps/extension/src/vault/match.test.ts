@@ -58,3 +58,39 @@ describe("shouldFill", () => {
     expect(shouldFill("accounts.google.com", "https://google.com/")).toBe(false);
   });
 });
+
+describe("shouldFill (public-suffix aware)", () => {
+  it("fills a registrable-domain credential on its subdomains", () => {
+    expect(shouldFill("github.com", "https://gist.github.com")).toBe(true);
+  });
+  it("never fills for public-suffix credentials", () => {
+    expect(shouldFill("github.io", "https://x.github.io")).toBe(false);
+    expect(shouldFill("vercel.app", "https://foo.vercel.app")).toBe(false);
+    expect(shouldFill("co.uk", "https://foo.co.uk")).toBe(false);
+  });
+  it("does not fill across sibling tenants of a public suffix", () => {
+    expect(shouldFill("a.github.io", "https://b.github.io")).toBe(false);
+    expect(shouldFill("a.github.io", "https://a.github.io")).toBe(true);
+  });
+  it("refuses http downgrade except on loopback", () => {
+    expect(shouldFill("github.com", "http://github.com")).toBe(false);
+    expect(shouldFill("localhost:3000", "http://localhost:3000")).toBe(true);
+    expect(shouldFill("localhost", "http://127.0.0.1")).toBe(false);
+    expect(shouldFill("127.0.0.1", "http://127.0.0.1")).toBe(true);
+  });
+  it("requires the port to match when the credential specifies one", () => {
+    expect(shouldFill("localhost:3000", "http://localhost:4000")).toBe(false);
+  });
+  it("treats IP hosts as exact-only", () => {
+    expect(shouldFill("1.2.3.4", "https://1.2.3.4")).toBe(true);
+    expect(shouldFill("1.2.3.4", "https://5.1.2.3.4")).toBe(false);
+  });
+  it("rejects lookalikes and reverse subdomain", () => {
+    expect(shouldFill("github.com", "https://github.com.evil.example")).toBe(false);
+    expect(shouldFill("sub.example.com", "https://example.com")).toBe(false);
+  });
+  it("rejects non-http(s) pages", () => {
+    expect(shouldFill("github.com", "ftp://github.com")).toBe(false);
+    expect(shouldFill("github.com", "garbage")).toBe(false);
+  });
+});

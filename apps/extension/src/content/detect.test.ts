@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickLoginFields } from "./detect";
+import { isFillableField, pickLoginFields } from "./detect";
 import type { FieldInfo } from "./detect";
 
 const f = (o: Partial<FieldInfo> = {}): FieldInfo => ({
@@ -44,6 +44,35 @@ describe("pickLoginFields edge cases", () => {
 
   it("uses the first password field when there are two", () => {
     const fields = [f({ type: "email" }), f({ type: "password" }), f({ type: "password" })];
+    expect(pickLoginFields(fields)).toEqual({ usernameIndex: 0, passwordIndex: 1 });
+  });
+});
+
+describe("isFillableField", () => {
+  const base = { ...f(), visible: true, enabled: true, formId: 0 };
+  it("accepts visible, enabled, non-hidden inputs", () => {
+    expect(isFillableField(base)).toBe(true);
+  });
+  it("rejects hidden, invisible, disabled or readonly inputs", () => {
+    expect(isFillableField({ ...base, type: "hidden" })).toBe(false);
+    expect(isFillableField({ ...base, visible: false })).toBe(false);
+    expect(isFillableField({ ...base, enabled: false })).toBe(false);
+  });
+});
+
+describe("pickLoginFields form scoping", () => {
+  it("rejects a username candidate from a different form than the password", () => {
+    const fields = [
+      { ...f({ type: "email" }), formId: 1 },
+      { ...f({ type: "password" }), formId: 2 },
+    ];
+    expect(pickLoginFields(fields)).toBeNull();
+  });
+  it("accepts a username in the same form", () => {
+    const fields = [
+      { ...f({ type: "email" }), formId: 2 },
+      { ...f({ type: "password" }), formId: 2 },
+    ];
     expect(pickLoginFields(fields)).toEqual({ usernameIndex: 0, passwordIndex: 1 });
   });
 });

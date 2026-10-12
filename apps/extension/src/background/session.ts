@@ -1,8 +1,38 @@
 import type { AuthParamsResponse, LoginResponse, VaultItemResponse } from "@zerovault/shared-types";
 import * as realCrypto from "@zerovault/crypto";
 import { createApiClient, type ApiClient } from "../lib/api";
+import { KDF_MAX_ITERATIONS, KDF_MIN_ITERATIONS, VaultEntrySchema } from "@zerovault/shared-types";
 import type { ItemsResponse, StateResponse } from "../lib/messages";
-import type { DecryptedItem, VaultEntry } from "../vault/entry";
+import type { DecryptedItem } from "../vault/entry";
+import { shouldFill } from "../vault/match";
+
+/** The single credential released to a content script. */
+export interface FillCredential {
+  site: string;
+  username: string;
+  password: string;
+}
+
+/** Pure: release one credential only when the real tab URL matches its site. */
+export function resolveFill(item: DecryptedItem | null, tabUrl: string): FillCredential | null {
+  if (!item || !shouldFill(item.site, tabUrl)) return null;
+  return { site: item.site, username: item.username, password: item.password };
+}
+
+/** The server is untrusted: refuse weak or absurd KDF parameters before deriving anything. */
+function assertKdfPolicy(p: unknown): void {
+  const k = p as { iterations?: unknown; hash?: unknown } | null;
+  if (
+    !k ||
+    typeof k.iterations !== "number" ||
+    !Number.isInteger(k.iterations) ||
+    k.iterations < KDF_MIN_ITERATIONS ||
+    k.iterations > KDF_MAX_ITERATIONS ||
+    k.hash !== "SHA-256"
+  ) {
+    throw new Error("Unacceptable key derivation parameters");
+  }
+}
 
 // Session lives ONLY in memory (the key is non-extractable and never persisted).
 // An MV3 worker restart drops it and requires re-login; that is intentional.
@@ -35,7 +65,12 @@ export interface SessionManager {
   /** Throws on failure; an existing session is left untouched in that case. */
   login(email: string, masterPassword: string): Promise<void>;
   state(): StateResponse;
-  items(): ItemsResponse;
+  /** Full decrypted items. Background-internal: never send over messaging. */
+  items(): { items: DecryptedItem[]; locked?: true };
+  /** Popup-safe listing: id/site/username only. */
+  labels(): ItemsResponse;
+  credentialFor(id: string): DecryptedItem | null;
+  resolveFill: typeof resolveFill;
   lock(): void;
 }
 
@@ -61,8 +96,10 @@ export function createSessionManager(deps: Partial<SessionDeps> = {}): SessionMa
     const api = createApi(() => token);
 
     const params = await api.get<AuthParamsResponse>(`/auth/params?email=${encodeURIComponent(email)}`);
+    assertKdfPolicy(params.kdfParams);
     const authHash = await c.deriveAuthHash(masterPassword, c.fromBase64(params.authSalt), params.kdfParams);
     const res = await api.post<LoginResponse>("/auth/login", { email, authHash });
+    assertKdfPolicy(res.kdfParams);
     token = res.token;
     const key = await c.deriveEncryptionKey(masterPassword, c.fromBase64(res.encSalt), res.kdfParams);
 
@@ -70,8 +107,11 @@ export function createSessionManager(deps: Partial<SessionDeps> = {}): SessionMa
     const items: DecryptedItem[] = [];
     for (const row of rows) {
       try {
-        const entry = JSON.parse(await c.decrypt(key, { ciphertext: row.ciphertext, iv: row.iv })) as VaultEntry;
-        items.push({ ...entry, id: row.id });
+        const parsed = VaultEntrySchema.safeParse(
+          JSON.parse(await c.decrypt(key, { ciphertext: row.ciphertext, iv: row.iv })),
+        );
+        if (!parsed.success) continue; // Malformed entry: skipped like an undecryptable one.
+        items.push({ ...parsed.data, id: row.id });
       } catch {
         // Undecryptable item: skipped from listing and matching.
       }
@@ -97,6 +137,17 @@ export function createSessionManager(deps: Partial<SessionDeps> = {}): SessionMa
       lastActivity = now();
       return { items: session.items };
     },
+    labels() {
+      if (!alive() || !session) return { items: [], locked: true };
+      lastActivity = now();
+      return { items: session.items.map(({ id, site, username }) => ({ id, site, username })) };
+    },
+    credentialFor(id) {
+      if (!alive() || !session) return null;
+      lastActivity = now();
+      return session.items.find((i) => i.id === id) ?? null;
+    },
+    resolveFill,
     lock() {
       session = null;
     },

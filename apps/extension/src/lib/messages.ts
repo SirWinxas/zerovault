@@ -1,12 +1,12 @@
-import type { DecryptedItem } from "../vault/entry";
-
 export type Message =
   | { type: "LOGIN"; email: string; masterPassword: string }
   | { type: "STATE" }
   | { type: "ITEMS" }
+  | { type: "FILL"; id: string; tabId: number }
+  | { type: "COPY"; id: string; field: "username" | "password" }
   | { type: "LOCK" };
 
-/** Popup -> content script. One credential, sent transiently on explicit user click. */
+/** Background -> content script. One credential, resolved in the background after an origin check. */
 export interface FillMessage {
   type: "FILL";
   site: string;
@@ -16,16 +16,25 @@ export interface FillMessage {
 export interface FillResponse {
   filled: boolean;
 }
+/** Background -> popup answer to a FILL request. */
+export type FillResult = FillResponse;
 
 export type LoginResult = { ok: true } | { ok: false; error: string };
 export interface StateResponse {
   unlocked: boolean;
   email?: string;
 }
+/** What the popup may see about an item: never secrets. */
+export interface ItemLabel {
+  id: string;
+  site: string;
+  username: string;
+}
 export interface ItemsResponse {
-  items: DecryptedItem[];
+  items: ItemLabel[];
   locked?: true;
 }
+export type CopyResponse = { value: string } | { error: string };
 export interface LockResponse {
   ok: true;
 }
