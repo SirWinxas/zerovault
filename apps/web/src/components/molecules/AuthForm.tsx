@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "../atoms/Button";
 import { LockIcon } from "../atoms/Icons";
 import { TextField } from "../atoms/TextField";
+import { isWeak } from "../../vault/health";
 
 interface AuthFormProps {
   title: string;
@@ -11,6 +12,8 @@ interface AuthFormProps {
   onSubmit: (email: string, masterPassword: string) => void;
   initialEmail?: string;
   initialPassword?: string;
+  /** "register" adds a confirm field and blocks weak/mismatched passwords. */
+  mode?: "login" | "register";
 }
 
 /** Presentational email + master password form. */
@@ -22,12 +25,29 @@ export function AuthForm({
   onSubmit,
   initialEmail = "",
   initialPassword = "",
+  mode = "login",
 }: AuthFormProps) {
+  const isRegister = mode === "register";
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState(initialPassword);
+  const [confirm, setConfirm] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (isRegister) {
+      if (password !== confirm) {
+        setLocalError("Master passwords do not match.");
+        return;
+      }
+      if (isWeak(password)) {
+        setLocalError(
+          "Master password is too weak. Use at least 12 characters with a mix of letters, numbers and symbols.",
+        );
+        return;
+      }
+    }
+    setLocalError(null);
     onSubmit(email, password);
   }
 
@@ -48,14 +68,24 @@ export function AuthForm({
       <TextField
         label="Master password"
         type="password"
-        autoComplete="current-password"
+        autoComplete={isRegister ? "new-password" : "current-password"}
         required
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
-      {error && (
+      {isRegister && (
+        <TextField
+          label="Confirm master password"
+          type="password"
+          autoComplete="new-password"
+          required
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+        />
+      )}
+      {(localError ?? error) && (
         <p role="alert" className="text-sm font-semibold text-ember">
-          {error}
+          {localError ?? error}
         </p>
       )}
       <Button

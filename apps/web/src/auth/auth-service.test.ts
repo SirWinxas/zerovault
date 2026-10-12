@@ -9,8 +9,8 @@ import { createAuthService } from "./auth-service";
 import type { ApiClient } from "../lib/api-client";
 import { createSessionStore } from "../session/session-store";
 
-// Fast KDF for the login path (server-provided params); register uses defaults.
-const FAST = { iterations: 1000, hash: "SHA-256" as const };
+// Minimum policy-compliant KDF for the login path (server-provided params).
+const FAST = { iterations: 600_000, hash: "SHA-256" as const };
 const SALT_B64 = btoa(String.fromCharCode(...new Uint8Array(16).fill(7)));
 
 function fakeApi(responses: Record<string, unknown>) {
@@ -89,5 +89,37 @@ describe("auth service", () => {
     const { api } = fakeApi(loginResponses);
     await createAuthService(api, createSessionStore()).login("a@b.c", "pw");
     expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it("login: rejects downgraded params from /auth/params before any derivation", async () => {
+    const { api, calls } = fakeApi({
+      ...loginResponses,
+      "GET /auth/params": {
+        authSalt: SALT_B64,
+        kdfParams: { iterations: 1, hash: "SHA-256" },
+      },
+    });
+    const session = createSessionStore();
+    await expect(
+      createAuthService(api, session).login("a@b.c", "pw"),
+    ).rejects.toThrow("Unsafe key derivation parameters");
+    expect(calls.map((c) => c.path)).toEqual(["/auth/params?email=a%40b.c"]);
+    expect(session.get()).toBeNull();
+  });
+
+  it("login: rejects downgraded params in the login response (no session set)", async () => {
+    const { api } = fakeApi({
+      ...loginResponses,
+      "POST /auth/login": {
+        token: "jwt",
+        encSalt: SALT_B64,
+        kdfParams: { iterations: 1, hash: "SHA-256" },
+      },
+    });
+    const session = createSessionStore();
+    await expect(
+      createAuthService(api, session).login("a@b.c", "pw"),
+    ).rejects.toThrow("Unsafe key derivation parameters");
+    expect(session.get()).toBeNull();
   });
 });

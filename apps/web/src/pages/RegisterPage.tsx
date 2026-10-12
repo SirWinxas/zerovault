@@ -17,6 +17,7 @@ export default function RegisterPage() {
         pending={pending}
         error={error}
         onSubmit={submit}
+        mode="register"
       />
       <p className="text-sm text-carbon/80">
         Already registered?{" "}

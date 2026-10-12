@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../lib/api-client";
 
+// Never confirm whether an email exists (account-enumeration neutral).
+const REGISTER_FAILED =
+  "Could not complete registration. If you already have an account, log in.";
+
 /** Container logic shared by Login/Register: run action, surface error, navigate. */
 export function useAuthSubmit(
   action: (email: string, masterPassword: string) => Promise<void>,
@@ -22,7 +26,7 @@ export function useAuthSubmit(
           ? e.status === 401
             ? "Invalid email or master password."
             : e.status === 409
-              ? "That email is already registered."
+              ? REGISTER_FAILED
               : `Request failed (${e.status}).`
           : "Something went wrong. Please try again.",
       );

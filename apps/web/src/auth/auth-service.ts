@@ -12,6 +12,7 @@ import type {
   RegisterRequest,
 } from "@zerovault/shared-types";
 import type { ApiClient } from "../lib/api-client";
+import { assertKdfPolicy } from "./kdf-policy";
 import type { SessionStore } from "../session/session-store";
 
 export interface AuthService {
@@ -27,6 +28,7 @@ export function createAuthService(
     const params = await api.get<AuthParamsResponse>(
       `/auth/params?email=${encodeURIComponent(email)}`,
     );
+    assertKdfPolicy(params.kdfParams);
     const authHash = await deriveAuthHash(
       masterPassword,
       fromBase64(params.authSalt),
@@ -36,6 +38,7 @@ export function createAuthService(
       email,
       authHash,
     });
+    assertKdfPolicy(res.kdfParams);
     const encryptionKey = await deriveEncryptionKey(
       masterPassword,
       fromBase64(res.encSalt),

@@ -160,6 +160,18 @@ describe("vault-service", () => {
     ]);
   });
 
+  it("list flags valid JSON of the wrong shape instead of throwing", async () => {
+    const { encrypt } = await import("@zerovault/crypto");
+    const wrong = await encrypt(key, '{"foo":1}');
+    const items = await createVaultService(
+      fakeApi({ get: [{ id: "11", ...wrong }] }).api,
+      () => key,
+    ).list();
+    expect(items).toEqual([
+      { id: "11", site: "", username: "", password: "", decryptError: true },
+    ]);
+  });
+
   it("throws a clear error when the vault is locked", async () => {
     const { api, calls } = fakeApi({ get: [] });
     const svc = createVaultService(api, () => null);

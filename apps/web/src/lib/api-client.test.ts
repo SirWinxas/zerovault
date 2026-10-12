@@ -73,4 +73,33 @@ describe("api client", () => {
     expect((err as ApiError).status).toBe(500);
     expect((err as ApiError).body).toBeNull();
   });
+
+  it("calls onUnauthorized on 401 when a token was sent, then still throws", async () => {
+    mockFetch(401, { error: "expired" });
+    const onUnauthorized = vi.fn();
+    const err = await createApiClient(() => "tok", onUnauthorized)
+      .get("/vault")
+      .catch((e: unknown) => e);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(401);
+  });
+
+  it("does not call onUnauthorized on 401 without a token (e.g. bad login)", async () => {
+    mockFetch(401, { error: "bad" });
+    const onUnauthorized = vi.fn();
+    await createApiClient(() => null, onUnauthorized)
+      .post("/auth/login", {})
+      .catch(() => undefined);
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it("does not call onUnauthorized for non-401 errors", async () => {
+    mockFetch(500, {});
+    const onUnauthorized = vi.fn();
+    await createApiClient(() => "tok", onUnauthorized)
+      .get("/x")
+      .catch(() => undefined);
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
 });

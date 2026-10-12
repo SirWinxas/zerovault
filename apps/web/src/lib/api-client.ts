@@ -19,7 +19,10 @@ export interface ApiClient {
   del<T = unknown>(path: string): Promise<T>;
 }
 
-export function createApiClient(getToken: () => string | null): ApiClient {
+export function createApiClient(
+  getToken: () => string | null,
+  onUnauthorized?: () => void,
+): ApiClient {
   async function request<T>(
     method: string,
     path: string,
@@ -38,6 +41,8 @@ export function createApiClient(getToken: () => string | null): ApiClient {
     });
 
     if (!res.ok) {
+      // An authenticated request rejected with 401 means the session is dead.
+      if (res.status === 401 && token) onUnauthorized?.();
       throw new ApiError(res.status, await res.json().catch(() => null));
     }
     if (res.status === 204) return undefined as T;

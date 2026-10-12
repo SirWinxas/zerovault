@@ -36,4 +36,16 @@ describe("copyWithAutoClear", () => {
     writeText.mockRejectedValueOnce(new Error("denied"));
     await expect(copyWithAutoClear("x", 10)).rejects.toThrow("denied");
   });
+
+  it("a second copy cancels the first timer so it is not cleared early", async () => {
+    await copyWithAutoClear("A"); // default 20s, t=0
+    await vi.advanceTimersByTimeAsync(15_000);
+    await copyWithAutoClear("B"); // t=15s
+    await vi.advanceTimersByTimeAsync(5_000); // t=20s: A's timer would fire here
+    expect(writeText).toHaveBeenCalledTimes(2);
+    expect(writeText).toHaveBeenLastCalledWith("B");
+    await vi.advanceTimersByTimeAsync(15_000); // t=35s
+    expect(writeText).toHaveBeenCalledTimes(3);
+    expect(writeText).toHaveBeenLastCalledWith("");
+  });
 });

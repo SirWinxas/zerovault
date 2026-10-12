@@ -1,8 +1,9 @@
 import { decrypt, encrypt } from "@zerovault/crypto";
-import type {
-  CreateVaultItemRequest,
-  UpdateVaultItemRequest,
-  VaultItemResponse,
+import {
+  VaultEntrySchema,
+  type CreateVaultItemRequest,
+  type UpdateVaultItemRequest,
+  type VaultItemResponse,
 } from "@zerovault/shared-types";
 import type { ApiClient } from "../lib/api-client";
 import type { DecryptedVaultItem, VaultEntry } from "./vault-entry";
@@ -44,10 +45,11 @@ export function createVaultService(
         items.map(async ({ id, ciphertext, iv }): Promise<DecryptedVaultItem> => {
           // One corrupt record must not fail the whole vault load.
           try {
-            const entry = JSON.parse(
-              await decrypt(key, { ciphertext, iv }),
-            ) as VaultEntry;
-            return { id, ...entry };
+            const parsed = VaultEntrySchema.safeParse(
+              JSON.parse(await decrypt(key, { ciphertext, iv })),
+            );
+            if (!parsed.success) throw new Error("Invalid vault entry shape");
+            return { id, ...parsed.data };
           } catch {
             return {
               id,

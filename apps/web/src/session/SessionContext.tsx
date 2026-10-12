@@ -49,7 +49,10 @@ export function SessionProvider({
   }, []);
 
   const value = useMemo<SessionContextValue>(() => {
-    const api = createApiClient(() => storeRef.current.getToken());
+    const api = createApiClient(
+      () => storeRef.current.getToken(),
+      lock,
+    );
     const auth = createAuthService(api, { set: setSession });
     return { session, setSession, lock, api, auth };
   }, [session, setSession, lock]);
