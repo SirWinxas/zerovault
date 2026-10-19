@@ -111,7 +111,7 @@ Web: http://localhost:5173 — API: http://localhost:3000
 
 ## License
 
-Copyright (C) 2026 Winxe
+Copyright (C) 2026 Daniel Gundín Castiñeiras
 
 ZeroVault is free software: you can redistribute it and/or modify it under the terms of the **GNU Affero General Public License** as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
