@@ -50,7 +50,7 @@ Split origins → the browser calls the API directly using `VITE_API_URL`.
   - [x] End-to-end smoke test online (register → login → create entry) — passes.
   - [x] README live URLs filled (web, API, repo).
   - [x] Commit identity switched to the account's GitHub `noreply` email; full history
-        rewritten (filter-branch) to remove `[redacted]` and force-pushed
+        rewritten (filter-branch) to remove a personal email and force-pushed
         (verified 0 occurrences on GitHub). Fixes the Vercel Hobby "commit author not a
         team member" deploy block.
   - [x] Repo visibility: made PUBLIC, then set back to **PRIVATE** per user request.
