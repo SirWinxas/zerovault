@@ -47,10 +47,8 @@ zerovault/
 │           │  ├─ application/
 │           │  └─ infra/
 │           └─ auth/
-├─ packages/
-│  └─ shared-types/        # DTOs shared by web and api
-└─ docs/
-   └─ PLAN.md              # 24-day plan + delivery checklist
+└─ packages/
+   └─ shared-types/        # DTOs shared by web and api
 ```
 
 ## Requirements
