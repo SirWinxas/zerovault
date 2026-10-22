@@ -105,7 +105,7 @@ Web: http://localhost:5173 — API: http://localhost:3000
 - API (Railway): https://zerovaultweb-production.up.railway.app
 - Repository: https://github.com/SirWinxas/zerovault
 - Slides: https://drive.google.com/file/d/1erNVKNn3Fnv12O4uu2uQK5_APzHpOC_u/view
-- Video: _TBD_
+- Video: https://drive.google.com/file/d/11IgKzrcKZYMJzQJ5zs5lQqIsH8LejF93/view
 
 ## License
 
