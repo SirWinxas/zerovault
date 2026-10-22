@@ -104,7 +104,7 @@ Web: http://localhost:5173 — API: http://localhost:3000
 - Web (Vercel): https://zerovault-tawny.vercel.app
 - API (Railway): https://zerovaultweb-production.up.railway.app
 - Repository: https://github.com/SirWinxas/zerovault
-- Slides: _TBD_
+- Slides: https://drive.google.com/file/d/1erNVKNn3Fnv12O4uu2uQK5_APzHpOC_u/view
 - Video: _TBD_
 
 ## License
